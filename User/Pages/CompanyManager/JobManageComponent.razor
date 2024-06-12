@@ -1,0 +1,586 @@
+﻿@page "/jobmanage"
+
+@inject IHttpContextAccessor HttpAccessor
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@using CurrieTechnologies.Razor.SweetAlert2
+@inject SweetAlertService Swal
+
+@inject HttpClient HttpClient
+@using System.Net.Http;
+@using System.Net.Http.Json;
+@using Api.Models
+@using Newtonsoft.Json;
+@using System.Net;
+@inject NavigationManager NavManager
+
+<main>
+
+    <!-- Hero Area Start-->
+    <div class="slider-area ">
+        <div class="single-slider section-overly slider-height2 d-flex align-items-center" style="background-image: url('@ImageUrl')">
+            <div class="container">
+                <div class="row">
+                    <div class="col-xl-12">
+                        <div class="hero-cap text-center">
+                            <h2>Quản lý công việc</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Hero Area End -->
+    <!-- Job List Area Start -->
+    <div class="job-listing-area pt-120 pb-120">
+        <div class="container">
+            <div class="row">
+                <!-- Left content -->
+                <div class="col-xl-3 col-lg-3 col-md-4">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="small-section-tittle2 mb-45">
+                                <div class="ion">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         xmlns:xlink="http://www.w3.org/1999/xlink"
+                                         width="20px" height="12px">
+                                        <path fill-rule="evenodd" fill="rgb(27, 207, 107)"
+                                              d="M7.778,12.000 L12.222,12.000 L12.222,10.000 L7.778,10.000 L7.778,12.000 ZM-0.000,-0.000 L-0.000,2.000 L20.000,2.000 L20.000,-0.000 L-0.000,-0.000 ZM3.333,7.000 L16.667,7.000 L16.667,5.000 L3.333,5.000 L3.333,7.000 Z" />
+                                    </svg>
+                                </div>
+                                <h4>Mô tả chung</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Job Category Listing start -->
+                    <div class="job-category-listing mb-50">
+                        <!-- single one -->
+                        <!-- single three -->
+                        <div class="single-listing">
+                            <!-- select-Categories start -->
+                            <div class="select-Categories pb-50">
+                                <div class="small-section-tittle2">
+                                    <h4>Chức năng chính</h4>
+                                </div>
+                                <label class="container">
+                                    Thêm công việc
+                                    <input type="checkbox">
+                                    
+                                </label>
+                                <label class="container">
+                                    Sửa thông tin công việc
+                                    <input type="checkbox">
+                                    
+                                </label>
+                                <label class="container">
+                                    Xóa công việc
+                                    <input type="checkbox">
+                                    
+                                </label>
+                            </div>
+                            <!-- select-Categories End -->
+                        </div>
+                    </div>
+                    <!-- Job Category Listing End -->
+                </div>
+                <!-- Right content -->
+                <div class="col-xl-9 col-lg-9 col-md-8">
+                    <!-- Featured_job_start -->
+                    <section class="featured-job-area">
+                        <div class="container">
+                            <!-- Count of Job list Start -->
+                            <div class="row">
+                                <div class="col-lg-12">
+                                    <div class="count-job mb-35">
+                                        @if (jobs != null)
+                                        {
+                                            <span>Tìm thấy @jobs.Count() công việc</span>
+                                        }
+                                        else
+                                        {
+                                            <span>Không có công việc nào</span>
+                                        }
+                                        <!-- Select job items start -->
+                                        <div class="select-job-items">
+                                            <div class="form-group mt-3">
+                                                <button type="button" data-toggle="modal" data-target="#createModal" class="button button-contactForm boxed-btn">Thêm</button>
+                                            </div>
+                                        </div>
+                                        <!--  Select job items End-->
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Count of Job list End -->
+                            <!-- single-job-content -->
+                            @if (jobs != null)
+                            {
+                                @foreach (var item in jobs)
+                                {
+
+                                    <div class="single-job-items mb-30">
+                                        <div class="job-items">
+                                            <div class="company-img">
+                                                <a href="#"><img src="@item.Company.CompanyPhoto" height="85px" width="85px" alt=""></a>
+                                            </div>
+                                            <div class="job-tittle job-tittle2">
+                                                <a href="#">
+                                                    <h4 style="width: 300px; white-space: nowrap;overflow: hidden; text-overflow: ellipsis;">@item.JobTitle</h4>
+                                                </a>
+                                                <ul>
+                                                    <li>Ngày hết hạn:  @item.ExpiredDate.ToShortDateString()</li>
+                                                    @if(item.Location != null)
+                                                    {
+                                                        <li><i class="fas fa-map-marker-alt"></i>@item.Location.Name</li>
+                                                    }  
+                                                    <li>$ @item.SalaryRange</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                        <div class="items-link items-link2 f-right">
+                                            <a @onclick="@(() => EditJob(item.JobId))" href="#" data-toggle="modal" data-target="#exampleModal">Sửa</a>
+                                            <a @onclick="@(async () => await ConfirmDelete(item.JobId))" href="#">Xóa</a>
+                                       
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            else 
+                            {
+                                <div class="single-job-items mb-30">
+                                    <p>Chưa có công việc nào</p>
+                                        
+                                </div>
+                            }
+
+                        </div>
+                    </section>
+                    <!-- Featured_job_end -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Sửa thông tin công việc</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+
+                    <EditForm Model="@editJob" OnValidSubmit="HandleEditSubmit">
+                        <DataAnnotationsValidator />
+                        <div class="form-group">
+                            <label>Tên công việc :</label>
+                            <input type="text" @bind-value="editJob.JobTitle" class="form-control">
+                            <ValidationMessage For="@(() => editJob.JobTitle)" />
+                        </div>
+                        <div class="form-group">
+                            <label>Mô tả công việc :</label>
+                            @*<input type="text" @bind-value="editJob.JobDescription" class="form-control">*@
+                            <textarea @bind="editJob.JobDescription" class="form-control"></textarea>
+                            <ValidationMessage For="@(() => editJob.JobDescription)" />
+                        </div>
+                        <div class="form-group">
+                            <label>Yêu cầu công việc :</label>
+                            @*<input type="text" @bind-value="editJob.JobDescription" class="form-control">*@
+                            <textarea @bind="editJob.JobRequirement" class="form-control"></textarea>
+                            <ValidationMessage For="@(() => editJob.JobRequirement)" />
+                        </div>
+                        <div class="form-group">
+                            <label>Địa điểm :</label>
+                            <input type="text" @bind-value="editJob.JobLocation" class="form-control">
+                            <ValidationMessage For="@(() => editJob.JobLocation)" />
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="@editJob.LocationId">Tỉnh thành :</label>
+                            <select id="@editJob.LocationId" @bind="editJob.LocationId" class="form-control">
+                                <option value="">-- Lựa chọn thành phố --</option>
+                                @foreach (var item in locations)
+                                {
+                                    <option value="@item.LocationId">@item.Name</option>
+                                }
+                            </select>
+                            <ValidationMessage For="@(() => editJob.LocationId)" />
+                        </div>
+                        <div class="form-group">
+                            <label>Mức lương :</label>
+                            <input type="text" @bind-value="editJob.SalaryRange" class="form-control">
+                            <ValidationMessage For="@(() => editJob.SalaryRange)" />
+                        </div>
+                        <div class="form-group">
+                            <label for="isActive">Is Active:</label>
+                            <InputCheckbox style="margin-left: 20px" @bind-Value="@editJob.IsActive" id="isActive" />
+                            <ValidationMessage For="@(() => editJob.IsActive)" />
+                            @if (editJob.IsActive)
+                            {
+                                <span style="margin-left: 20px">Active</span>
+                            }
+                            else
+                            {
+                                <span style="margin-left: 20px">Inactive</span>
+                            }
+                        </div>
+                        <div class="form-group">
+                            <label>Ngày hết hạn :</label>
+                            @* <input type="text" @bind-value="editJob.ExpiredDate" class="form-control">*@
+                            <InputDate Type="InputDateType.DateTimeLocal" class="form-control"
+                                       min="@DateTime.Today.ToString("yyyy-MM-dd")" @bind-Value="editJob.ExpiredDate" />
+                            <ValidationMessage For="@(() => editJob.ExpiredDate)" />
+                        </div>
+                        <div class="form-group">
+                            <label>Tên công ty :</label>
+                            <input type="text" disabled placeholder="@company.CompanyName" class="form-control">
+                            @*<select disabled id="@editJob.CompanyId" @bind="editJob.CompanyId" class="form-control">
+                                <option value="">-- Select Company --</option>
+                                @foreach (var company in companies)
+                                {
+                                    <option value="@company.CompanyId">@company.CompanyName</option>
+                                }
+                            </select>
+                            <ValidationMessage For="@(() => editJob.CompanyId)" />*@
+                        </div>
+
+                        <div class="form-group">
+                            <label for="@editJob.CategoryId">Danh mục :</label>
+                            <select id="@editJob.CategoryId" @bind="editJob.CategoryId" class="form-control">
+                                <option value="">-- Lựa chọn danh mục --</option>
+                                @foreach (var category in categories)
+                                {
+                                    <option value="@category.CategoryId">@category.CategoryName</option>
+                                }
+                            </select>
+                            <ValidationMessage For="@(() => editJob.CategoryId)" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="@editJob.TypeId">Đặc thù công việc :</label>
+                            <select id="@editJob.TypeId" required @bind="editJob.TypeId" class="form-control">
+                                <option value="">-- Select Type --</option>
+                                @foreach (var item in typeWorks)
+                                {
+                                    <option value="@item.TypeId">@item.TypeName</option>
+                                }
+                            </select>
+                            <ValidationMessage For="@(() => editJob.TypeId)" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="@editJob.LevId">Level :</label>
+                            <select id="@editJob.LevId" required @bind="editJob.LevId" class="form-control">
+                                <option value="">-- Select Level --</option>
+                                @foreach (var item in levelOfWorks)
+                                {
+                                    <option value="@item.LevId">@item.LevelName</option>
+                                }
+                            </select>
+                            <ValidationMessage For="@(() => editJob.LevId)" />
+                        </div>
+                        <button type="submit" class="btn btn-primary">Lưu</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy</button>
+                        @*@if (!string.IsNullOrEmpty(alertMessage))
+                        {
+                        <div class="form-group">
+                        <label style="margin-top: 20px">Notification :</label>
+                        <div class="alert alert-danger" role="alert">@alertMessage</div>
+                        </div>
+                        }*@
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="modal fade" id="createModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Thêm công việc</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="@newJob" OnSubmit="HandleCreateSubmit">
+                        <DataAnnotationsValidator />
+                        <div class="form-group">
+                            <label>Tên công việc : </label>
+                            <input type="text" required @bind-value="newJob.JobTitle" class="form-control">
+                            <ValidationMessage For="@(() => newJob.JobTitle)" />
+                        </div>
+                        <div class="form-group">
+                            <label>Mô tả công việc : </label>
+                            <textarea type="text" required @bind="newJob.JobDescription" class="form-control">
+                            </textarea>
+                            <ValidationMessage For="@(() => newJob.JobDescription)" />
+                        </div>
+                        <div class="form-group">
+                            <label>Yêu cầu công việc : </label>
+                            <textarea type="text" required @bind="newJob.JobRequirement" class="form-control">
+                            </textarea>
+                            <ValidationMessage For="@(() => newJob.JobRequirement)" />
+                        </div>
+                        <div class="form-group">
+                            <label>Địa chỉ : </label>
+                            <input type="text" required @bind-value="newJob.JobLocation" class="form-control">
+                            <ValidationMessage For="@(() => newJob.JobLocation)" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="@newJob.LocationId">Tỉnh thành :</label>
+                            <select id="@newJob.LocationId" required @bind="newJob.LocationId" class="form-control">
+                                <option value="">-- Lựa chọn tỉnh thành --</option>
+                                @foreach (var item in locations)
+                                {
+                                    <option value="@item.LocationId">@item.Name</option>
+                                }
+                            </select>
+                            <ValidationMessage For="@(() => newJob.LocationId)" />
+                        </div>
+
+                        <div class="form-group">
+                            <label>Mức lương : </label>
+                            <input type="text" required @bind-value="newJob.SalaryRange" class="form-control">
+                            <ValidationMessage For="@(() => newJob.SalaryRange)" />
+                        </div>
+                        <div class="form-group">
+                            <label>Ngày hết hạn : </label>
+                            @*<input type="text" required @bind-value="newJob.ExpiredDate" class="form-control">*@
+                            <InputDate Type="InputDateType.DateTimeLocal" class="form-control"
+                                       min="@DateTime.Now.ToString("yyyy-MM-dd")" @bind-Value="newJob.ExpiredDate" />
+                            <ValidationMessage For="@(() => newJob.ExpiredDate)" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="@newJob.CompanyId">Tên công ty :</label>
+                            <input type="text" disabled placeholder="@company.CompanyName" class="form-control">
+                           @* <select id="@newJob.CompanyId" required @bind="@newJob.CompanyId" class="form-control">
+                                <option value="">-- Select Company --</option>
+                                @foreach (var company in companies)
+                                {
+                                    <option value="@company.CompanyId">@company.CompanyName</option>
+                                }
+                            </select>
+                            <ValidationMessage For="@(() => newJob.CompanyId)" />*@
+                        </div>
+                        <div class="form-group">
+                            <label for="@newJob.CategoryId">Danh mục :</label>
+                            <select id="@newJob.CategoryId" required @bind="newJob.CategoryId" class="form-control">
+                                <option value="">-- Select Category --</option>
+                                @foreach (var category in categories)
+                                {
+                                    <option value="@category.CategoryId">@category.CategoryName</option>
+                                }
+                            </select>
+                            <ValidationMessage For="@(() => newJob.CategoryId)" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="@newJob.TypeId">Đặc thù công việc :</label>
+                            <select id="@newJob.TypeId" required @bind="newJob.TypeId" class="form-control">
+                                <option value="">-- Select Type --</option>
+                                @foreach (var item in typeWorks)
+                                {
+                                    <option value="@item.TypeId">@item.TypeName</option>
+                                }
+                            </select>
+                            <ValidationMessage For="@(() => newJob.TypeId)" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="@newJob.LevId">Level :</label>
+                            <select id="@newJob.LevId" required @bind="newJob.LevId" class="form-control">
+                                <option value="">-- Select Level --</option>
+                                @foreach (var item in levelOfWorks)
+                                {
+                                    <option value="@item.LevId">@item.LevelName</option>
+                                }
+                            </select>
+                            <ValidationMessage For="@(() => newJob.LevId)" />
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Lưu</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy</button>
+                        @*@if (!string.IsNullOrEmpty(alertMessage))
+                        {
+                        <div class="form-group">
+                        <label style="margin-top: 20px">Notification :</label>
+                        <div class="alert alert-danger" role="alert">@alertMessage</div>
+                        </div>
+                        }*@
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+</main>
+
+
+
+@code {
+    private string ImageUrl = "assets/img/hero/about.jpg";
+    public int type = 0;
+    public int id = 0;
+    public int compId = 0;
+
+    HttpClient http = new HttpClient();
+
+
+    private List<JobList> jobs = new List<JobList>();
+    private List<Company> companies = new List<Company>();
+    private List<Category> categories = new List<Category>();
+    private List<TypeWork> typeWorks = new List<TypeWork>();
+    private List<LevelOfWork> levelOfWorks = new List<LevelOfWork>();
+    private List<Location> locations = new List<Location>();
+
+    private Company company = new Company();
+
+    private JobItem newJob = new JobItem();
+    private JobItem editJob = new JobItem();
+
+    string api_url = "https://localhost:7280/";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        compId = await sessionStorage.GetItemAsync<int>("comId");
+        StateHasChanged();
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Delay(50);
+        //compId = await sessionStorage.GetItemAsync<int>("comId");
+        if (compId != 0)
+        {
+            try
+            {
+                jobs = await http.GetFromJsonAsync<List<JobList>>($"https://localhost:7280/api/JobList/GetJobByCompanyId/{compId}");
+                var str = await HttpClient.GetFromJsonAsync<List<Company>>(api_url + "api/Company");
+                companies = str.Where(x => x.CompanyId == compId).ToList();
+                company = str.Where(x => x.CompanyId == compId).FirstOrDefault();
+                categories = await HttpClient.GetFromJsonAsync<List<Category>>(api_url + "api/Category");
+                typeWorks = await HttpClient.GetFromJsonAsync<List<TypeWork>>(api_url + "api/Type");
+                levelOfWorks = await HttpClient.GetFromJsonAsync<List<LevelOfWork>>(api_url + "api/Level");
+                locations = await HttpClient.GetFromJsonAsync<List<Location>>(api_url + "api/Location");
+            }
+            catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+            {
+                var str = await HttpClient.GetFromJsonAsync<List<Company>>(api_url + "api/Company");
+                companies = str.Where(x => x.CompanyId == compId).ToList();
+                company = str.Where(x => x.CompanyId == compId).FirstOrDefault();
+                categories = await HttpClient.GetFromJsonAsync<List<Category>>(api_url + "api/Category");
+                typeWorks = await HttpClient.GetFromJsonAsync<List<TypeWork>>(api_url + "api/Type");
+                levelOfWorks = await HttpClient.GetFromJsonAsync<List<LevelOfWork>>(api_url + "api/Level");
+                locations = await HttpClient.GetFromJsonAsync<List<Location>>(api_url + "api/Location");
+                // Handle the 404 error here
+                jobs = null;
+            }
+            catch (Exception ex)
+            {
+                var str = await HttpClient.GetFromJsonAsync<List<Company>>(api_url + "api/Company");
+                companies = str.Where(x => x.CompanyId == compId).ToList();
+                company = str.Where(x => x.CompanyId == compId).FirstOrDefault();
+                categories = await HttpClient.GetFromJsonAsync<List<Category>>(api_url + "api/Category");
+                typeWorks = await HttpClient.GetFromJsonAsync<List<TypeWork>>(api_url + "api/Type");
+                levelOfWorks = await HttpClient.GetFromJsonAsync<List<LevelOfWork>>(api_url + "api/Level");
+                locations = await HttpClient.GetFromJsonAsync<List<Location>>(api_url + "api/Location");
+                // Handle other exceptions
+                jobs = null;
+            }
+        }       
+    }
+    async Task HandleEditSubmit()
+    {
+        var response = await HttpClient.PutAsJsonAsync(api_url + $"api/JobList/{editJob.Id}", editJob);
+        if (response.IsSuccessStatusCode)
+        {
+            jobs = await http.GetFromJsonAsync<List<JobList>>($"https://localhost:7280/api/JobList/GetJobByCompanyId/{compId}");
+            //await OnInitializedAsync();
+            await Swal.FireAsync("Thành công!", "Sửa thông tin thành công!", SweetAlertIcon.Success);
+
+        }
+        else
+        {
+            await Swal.FireAsync("Falied!", "Job edited failed!", SweetAlertIcon.Error);
+        }
+    }
+    async Task HandleCreateSubmit()
+    {
+        newJob.CompanyId = company.CompanyId;
+        var response = await HttpClient.PostAsJsonAsync(api_url + "api/JobList", newJob);
+        if (response.IsSuccessStatusCode)
+        {
+            jobs = await http.GetFromJsonAsync<List<JobList>>($"https://localhost:7280/api/JobList/GetJobByCompanyId/{compId}");
+            //await OnInitializedAsync();
+            newJob = new JobItem();
+            await Swal.FireAsync("Thành công!", "Tạo công việc mới thành công!", SweetAlertIcon.Success);
+        }
+        else
+        {
+            await Swal.FireAsync("Failed!", " Job created failed!", SweetAlertIcon.Error);
+        }
+    }
+
+
+    private async Task ConfirmDelete(int id)
+    {
+        var confirmationResult = await Swal.FireAsync(
+            new SweetAlertOptions
+                {
+                    Title = "Bạn có chắc không?",
+                    Text = "Bạn không thể hoàn tác lại!",
+                    Icon = SweetAlertIcon.Warning,
+                    ShowCancelButton = true,
+                    ConfirmButtonText = "Xóa công việc!",
+                    CancelButtonText = "Quay lại!"
+                }
+        );
+
+        if (confirmationResult.IsConfirmed)
+        {
+            await DeleteJob(id);
+        }
+    }
+
+    async Task DeleteJob(int id)
+    {
+        var response = await HttpClient.DeleteAsync(api_url + $"api/JobList/{id}");
+        if (response.IsSuccessStatusCode)
+        {
+            // Cập nhật danh sách công việc sau khi xóa thành công
+            jobs = await http.GetFromJsonAsync<List<JobList>>($"https://localhost:7280/api/JobList/GetJobByCompanyId/{compId}");
+            //await OnInitializedAsync();
+            await Swal.FireAsync("Thành công!", "Xóa công việc thành công!", SweetAlertIcon.Success);
+        }
+        else
+        {
+            await Swal.FireAsync("Thất bại!", "Phát hiện hồ sơ ứng tuyển công việc!", SweetAlertIcon.Error);
+        }
+    }
+
+    void EditJob(int id)
+    {
+        var str = jobs.FirstOrDefault(x => x.JobId == id);
+        editJob.Id = str.JobId;
+        editJob.JobTitle = str.JobTitle;
+        editJob.JobDescription = str.JobDescription;
+        editJob.JobLocation = str.JobLocation;
+        editJob.SalaryRange = str.SalaryRange;
+        editJob.IsActive = str.IsActive;
+        editJob.ExpiredDate = str.ExpiredDate;
+        editJob.CompanyId = str.CompanyId;
+        editJob.CategoryId = str.CategoryId;
+        editJob.TypeId = str.TypeId;
+        editJob.LevId = str.LevId;
+        editJob.LocationId = str.LocationId;
+        editJob.JobRequirement = str.JobRequirement;
+    }
+
+}

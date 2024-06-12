@@ -1,0 +1,391 @@
+﻿@page "/seekerinfo"
+@inject IHttpContextAccessor HttpAccessor
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+
+@inject HttpClient HttpClient
+@using System.Net.Http;
+@using System.Net.Http.Json;
+@using Api.Models
+@using Newtonsoft.Json;
+@inject NavigationManager NavManager
+@using CurrieTechnologies.Razor.SweetAlert2
+@inject SweetAlertService Swal
+@inject IWebHostEnvironment env
+
+
+<style>
+    .loading {
+        /* Định dạng cho loading */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+    }
+
+    .loading-text {
+        /* Định dạng cho văn bản trong loading */
+        font-size: 24px;
+        font-weight: bold;
+    }
+</style>
+
+@if (isLoading)
+{
+    <div class="loading">
+        <div class="loading-text">Đang tải...</div>
+        <!-- Bạn có thể thêm biểu tượng loading ở đây nếu cần -->
+    </div>
+}
+else
+{  
+<!-- Hero Area Start-->
+<div class="slider-area ">
+    <div class="single-slider section-overly slider-height2 d-flex align-items-center" style="background-image: url('@ImageUrl')">
+        <div class="container">
+            <div class="row">
+                <div class="col-xl-12">
+                    <div class="hero-cap text-center">
+                        <h2>Thông tin người dùng</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Hero Area End -->
+
+<div class="whole-wrap">
+    <div class="container ">
+        <div class="section-top-border"> 
+            <div class="row">
+                <div style="border: 1px solid gray; max-height: 400px; margin-right: 20px; width: 30%">
+                    @*<label>Photo :</label>
+                    <br />*@
+
+                    @if (comp.Photo != null)
+                    {
+                        <img src="@comp.Photo" style="border-radius: 50%; display: block; margin-left: auto;margin-right: auto; margin-top: 20px;margin-bottom: 20px; width: 70%" />
+                     @*   <br/>*@
+                        <p style="text-align: center"><b>@comp.Name</b></p>
+
+                    }
+                    else
+                    {
+                        <img src="../assets/img_avatar.png" style="border-radius: 50%;display: block; margin-left: auto;margin-right: auto; margin-top: 20px;margin-bottom: 20px; width: 70%" />
+                        <p style="text-align: center"><b>@comp.Name</b></p>
+                    }
+
+                </div>
+                <div class="col-lg-8 col-md-8" >
+                    <h3 class="mb-30">Thông tin người dùng</h3>
+                    <form action="#">
+                       @* <div class="mt-10">
+                            <label>Name :</label>
+                            <input type="text" name="first_name" placeholder="@comp.Name" disabled
+                                   class="single-input">
+                        </div>
+                        <br />*@
+                        <div class="mt-10">
+                            <label>Số điện thoại :</label>
+                            <input type="text" name="first_name" placeholder="@comp.PhoneNumber" disabled
+                                   class="single-input">
+                        </div>
+                        <br />
+                        <div class="mt-10">
+                            <label>GPA :</label>
+                            <input type="text" name="first_name" placeholder="@comp.GPA" disabled
+                                   class="single-input">
+                        </div>
+                        <br />
+                        <div class="mt-10">
+                            <label>Chuyên ngành :</label>
+                            <input type="text" name="first_name" placeholder="@comp.Major" disabled
+                                   class="single-input">
+                        </div>
+                        <br />
+                            <div class="mt-10">
+                                <label>Địa chỉ :</label>
+                                <input type="text" name="first_name" placeholder="@comp.SeekerAddress" disabled
+                                       class="single-input">
+                            </div>
+                            <br />
+                            @if (comp.Location != null)
+                            {
+                                <div class="mt-10">
+                                    <label>Tỉnh thành :</label>
+                                    <input type="text" name="first_name" placeholder="@comp.Location.Name" disabled
+                                    class="single-input">
+                                </div>
+                                <br />
+                            }
+                            <div class="mt-10">
+                            <label>File CV :</label>
+                            
+                            @if (comp.FileCV != null)
+                            {
+                                <input type="text" name="last_name" placeholder="@comp.FileCV" disabled
+                                       class="single-input">
+                                @*<button @onclick="DownloadFile">Download File</button>*@
+
+                                <object data="@comp.FileCV" type="application/pdf" width="100%" height="400px">
+                                    <embed src="@comp.FileCV" type="application/pdf" />
+                                </object>
+                            }
+                            else
+                            {
+                                <input type="text" name="last_name" placeholder="Không có CV" disabled
+                                       class="single-input">
+                            }
+                        </div>
+                        <br />
+                        @*<div class="mt-10">
+                            <label>Photo :</label>
+                            <br />
+                           
+                            @if (comp.Photo != null)
+                            {
+                                <img src="@comp.Photo" height="300px" width="300px" />
+                            }
+                            else
+                            {
+                                <input type="text" name="last_name" placeholder="Khong co Photo" disabled
+                                       class="single-input">
+                            }
+
+                        </div>*@
+                        <br />
+                        <div class="form-group mt-3">
+                            <button type="button" @onclick="@(() => EditInfo())" data-toggle="modal" data-target="#exampleModal" class="button button-contactForm boxed-btn">Sửa thông tin</button>
+                        </div>
+
+
+                    </form>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Sửa thông tin người dùng</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@editComp" OnValidSubmit="HandleEditSubmit">
+                    <DataAnnotationsValidator />
+                    <div class="form-group">
+                        <label>Tên người dùng :</label>
+                        <input type="text" @bind-value="editComp.Name" class="form-control">
+                        <ValidationMessage For="@(() => editComp.Name)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Số điện thoại :</label>
+                        <input type="text" @bind-value="editComp.PhoneNumber" class="form-control">
+                        <ValidationMessage For="@(() => editComp.PhoneNumber)" />
+                    </div>
+                    <div class="form-group">
+                        <label>GPA :</label>
+                        <input type="number" step="0.01" @bind-value="editComp.GPA" class="form-control">
+                        <ValidationMessage For="@(() => editComp.GPA)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Chuyên ngành :</label>
+                        <input type="text" @bind-value="editComp.Major" class="form-control">
+                        <ValidationMessage For="@(() => editComp.Major)" />
+                    </div>
+
+                        <div class="form-group">
+                            <label>Địa chỉ :</label>
+                            <input type="text" @bind-value="editComp.SeekerAddress" class="form-control">
+                            <ValidationMessage For="@(() => editComp.SeekerAddress)" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="@editComp.LocationId">Tỉnh thành :</label>
+                            <select id="@editComp.LocationId" @bind="editComp.LocationId" class="form-control">
+                                <option value="">-- Select City --</option>
+                                @foreach (var item in locations)
+                                {
+                                    <option value="@item.LocationId">@item.Name</option>
+                                }
+                            </select>
+                            <ValidationMessage For="@(() => editComp.LocationId)" />
+                        </div>
+
+                    <div class="form-group">
+                        <label>File CV :</label>
+                        @*<input type="text" @bind-value="editComp.FileCV" class="form-control">
+                        <ValidationMessage For="@(() => editComp.FileCV)" />*@
+                        <InputFile  OnChange="@OnFileChange" accept=".pdf" />
+                        @if (editComp.FileCV != null)
+                        {
+                            <input type="text" @bind-value="editComp.FileCV" disabled class="form-control">
+                        }
+                    </div>
+                   
+                    
+                    <div class="form-group">
+                        <label>Ảnh đại diện :</label>
+                        
+                        <InputFile OnChange="@OnInputFileChange" accept=".jpg,.jpeg,.png,.gif" />
+                        @if (editComp.Photo != null)
+                        {
+                            <div>
+                                <img src="@editComp.Photo" width="200px">
+                            </div>
+                        }
+                    </div>
+
+
+                    <button type="submit" class="btn btn-primary">Lưu</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Quay lại</button>
+
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+}
+@code {
+
+    private string ImageUrl = "assets/img/hero/about.jpg";
+    private Seeker comp = new Seeker();
+
+    private SeekerItem editComp = new SeekerItem();
+    private List<Location> locations = new List<Location>();
+
+    private IBrowserFile selectedFile;
+    private string downloadUrl;
+
+    HttpClient http = new HttpClient();
+
+    public int compId = 0;
+    private bool isLoading = true;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        compId = await sessionStorage.GetItemAsync<int>("seekerId");
+        StateHasChanged();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        await Task.Delay(100);
+        //compId = await sessionStorage.GetItemAsync<int>("seekerId");
+        if (compId != 0)
+        {
+            isLoading = false;
+            locations = await HttpClient.GetFromJsonAsync<List<Location>>("https://localhost:7280/api/Location");
+            comp = await HttpClient.GetFromJsonAsync<Seeker>($"https://localhost:7280/api/Seeker/{compId}");
+        }
+    }
+
+    async Task HandleEditSubmit()
+    {
+        var response = await HttpClient.PutAsJsonAsync($"https://localhost:7280/api/Seeker/{compId}", editComp);
+        if (response.IsSuccessStatusCode)
+        {
+            comp = await HttpClient.GetFromJsonAsync<Seeker>($"https://localhost:7280/api/Seeker/{compId}");
+            //await OnInitializedAsync();
+            await Swal.FireAsync("Thành công!", "Sửa thông tin thành công!", SweetAlertIcon.Success);
+        }
+        else
+        {
+            await Swal.FireAsync("Thất bại!", "Sửa thông tin thất bại!", SweetAlertIcon.Error);
+        }
+    }
+    void EditInfo()
+    {
+        var str = comp;
+        editComp.SeekerId = str.SeekerId;
+        editComp.Name = str.Name;
+        editComp.PhoneNumber = str.PhoneNumber;
+        editComp.FileCV = str.FileCV;
+        editComp.Photo = str.Photo;
+        editComp.GPA = str.GPA;
+        editComp.Major = str.Major;
+        editComp.LocationId = str.LocationId;
+        editComp.SeekerAddress = str.SeekerAddress;
+    }
+    private async Task OnInputFileChange(InputFileChangeEventArgs e)
+    {
+
+        IBrowserFile imgFile = e.File;
+        var buffers = new byte[imgFile.Size];
+        await imgFile.OpenReadStream().ReadAsync(buffers);
+        string imageType = imgFile.ContentType;
+        string fileName = imgFile.Name;
+        editComp.Photo = $"data:{imageType};base64,{Convert.ToBase64String(buffers)}";
+
+
+        /*IBrowserFile selectedFiles = e.File;
+        Stream stream = selectedFiles.OpenReadStream();
+        var path = $"{env.WebRootPath}\\{selectedFiles.Name}";
+        FileStream fs = File.Create(path);
+        await stream.CopyToAsync(fs);
+        editComp.Photo = $"/{Path.GetFileName(path)}"; 
+        stream.Close();
+        fs.Close();
+        StateHasChanged();*/
+
+    }
+
+    private async Task OnFileChange(InputFileChangeEventArgs e)
+    {
+        IBrowserFile selectedFiles = e.File;
+        Stream stream = selectedFiles.OpenReadStream();
+        var path = $"{env.WebRootPath}\\{selectedFiles.Name}";
+        FileStream fs = File.Create(path);
+        await stream.CopyToAsync(fs);
+        editComp.FileCV = e.File.Name;       
+        stream.Close();
+        fs.Close();
+        StateHasChanged();
+    }
+
+    private void DownloadFile()
+    {
+        var filePath = $"{env.WebRootPath}\\{comp.FileCV}";
+        if (File.Exists(filePath) && Path.GetExtension(comp.FileCV).Equals(".pdf", StringComparison.OrdinalIgnoreCase))
+        {
+            var fileBytes = File.ReadAllBytes(filePath);
+            var fileName = Path.GetFileNameWithoutExtension(comp.FileCV) + ".pdf";
+
+            // Initiate the download of the file
+            var content = new System.Net.Http.ByteArrayContent(fileBytes);
+            content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/pdf");
+
+
+            var url = "data:application/octet-stream;base64," + Convert.ToBase64String(fileBytes);
+            var response = new HttpResponseMessage();
+            response.Content = content;
+            response.Content.Headers.ContentDisposition = new System.Net.Http.Headers.ContentDispositionHeaderValue("attachment") { FileName = fileName };
+
+            // Trigger the file download
+            var stream = new System.IO.MemoryStream(fileBytes);
+            response.Content.Headers.ContentLength = stream.Length;
+            response.Content.Headers.ContentRange = new System.Net.Http.Headers.ContentRangeHeaderValue(stream.Length);
+
+            // Trigger the download
+            
+            
+            NavManager.NavigateTo(url, true);
+
+        }
+        else
+        {
+            // Handle file not found scenario or non-PDF file
+            // You can display an error message or perform any other action
+        }
+    }
+    
+}

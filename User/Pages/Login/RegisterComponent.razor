@@ -1,0 +1,185 @@
+﻿@page "/register"
+@inject NavigationManager NavManager
+@using System.Net.Http;
+@using System.Net.Http.Json;
+@using Api.Models
+@using Newtonsoft.Json;
+@inject IHttpContextAccessor HttpAccessor
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+
+
+<div class="slider-area ">
+    <div class="single-slider section-overly slider-height2 d-flex align-items-center" style="background-image: url('@ImageUrl')">
+        <div class="container">
+            <div class="row">
+                <div class="col-xl-12">
+                    <div class="hero-cap text-center">
+                        <h2>Đăng ký</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="whole-wrap">
+    <div class="container box_1170">
+        <div class="section-top-border">
+            <div class="row">
+                <div class="col-lg-8 col-md-8">
+                    @*<h3 class="mb-30">Form Element</h3>*@
+                    <EditForm Model="@registrationModel" OnValidSubmit="Register">
+                        <DataAnnotationsValidator />
+                        <div class="mt-10">
+                            <input type="email" @bind-value="registrationModel.Email" placeholder="Email" required class="single-input">
+                            <ValidationMessage For="@(() => registrationModel.Email)" />
+                        </div>
+                        <br />
+                        <div class="mt-10">
+                            <input type="password" @bind-value="registrationModel.Password" placeholder="Mật khẩu" required class="single-input">
+                            <ValidationMessage For="@(() => registrationModel.Password)" />
+                        </div>
+                        <br />
+                        <div class="mt-10">
+                            <input type="password" @bind-value="confirm" placeholder="Xác nhận mật khẩu" required class="single-input">
+                            
+                        </div>
+                        <br />
+
+
+                        <div class="mt-10">
+                            <label>Bạn đăng ký với tư cách</label>
+
+                            <div class="d-flex justify-content-around">
+                                <div class="form-check">
+                                    <input @onchange="@(() => registrationModel.UserTypeId=2)" type="radio" name="checkrole" class="form-check-input">
+                                    <label>Người tìm việc</label>
+                                </div>
+                                <div class="form-check">
+                                    <input @onchange="@(() => registrationModel.UserTypeId=3)" type="radio" name="checkrole" class="form-check-input">
+                                    <label>Công ty</label>
+                                </div>
+                               
+                            </div>
+                            <ValidationMessage For="@(() => registrationModel.UserTypeId)" />
+                        </div>
+
+                        <div class="mt-3">
+
+                            <button @onclick="Register" class="btn btn-block btn-primary btn-lg font-weight-medium auth-form-btn" type="submit">
+                                Đăng ký
+                            </button>
+                        </div>
+                        <div class="text-center mt-4 font-weight-light">
+                            Bạn đã có tài khoản? <a href="/login" class="text-primary">Đăng nhập</a>
+                        </div>
+                        @if (!string.IsNullOrEmpty(alertMessage))
+                        {
+                            <div class="alert alert-danger" role="alert">@alertMessage</div>
+                        }
+
+                    </EditForm>
+
+                </div>
+                <div class="col-lg-3 col-md-4 mt-sm-30">
+                    <div class="single-element-widget">
+                        <img src="../assets/img/signin-image.jpg" alt="sing in image">
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+@code {
+    private string ImageUrl = "../assets/img/hero/about.jpg";
+
+    private RegistrationModel registrationModel = new RegistrationModel() { };
+
+    HttpClient http = new HttpClient();
+    public string alertMessage;
+    private bool alertMessageShow = false;
+
+    public string confirm;
+
+    private async Task Register()
+    {
+        if (confirm == registrationModel.Password && registrationModel.UserTypeId == 3)
+        {
+            alertMessage = "Đang xử lý...";
+            alertMessageShow = true;
+
+            var response = await http.PostAsJsonAsync("https://localhost:7280/api/Register", new { registrationModel.Email, registrationModel.Password, registrationModel.UserTypeId });
+
+            if (response.IsSuccessStatusCode)
+            {
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var responseObject = JsonConvert.DeserializeObject<Dictionary<string, string>>(responseContent);
+                int userId = Convert.ToInt32(responseObject["UserId"]);
+
+                await InvokeAsync(() => StateHasChanged());
+                alertMessage = "Đăng ký thành công với tài khoản công ty!!!";
+                await http.PostAsync($"https://localhost:7280/api/Company?id={userId}", new StringContent("application/json"));
+                await Task.Delay(1000);
+                NavManager.NavigateTo("/login");
+
+            }
+            else
+            {
+                await InvokeAsync(() => StateHasChanged());
+                alertMessage = "Đăng ký thất bại!";
+                await Task.Delay(1000);
+                alertMessageShow = false;
+                alertMessage = "";
+                registrationModel.Password = "";
+
+            }
+        }
+        else if (confirm == registrationModel.Password && registrationModel.UserTypeId == 2)
+        {
+            alertMessage = "Đang xử lý...";
+            alertMessageShow = true;
+
+            var response = await http.PostAsJsonAsync("https://localhost:7280/api/Register", new { registrationModel.Email, registrationModel.Password, registrationModel.UserTypeId });
+
+            if (response.IsSuccessStatusCode)
+            {
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var responseObject = JsonConvert.DeserializeObject<Dictionary<string, string>>(responseContent);
+                int userId = Convert.ToInt32(responseObject["UserId"]);
+
+                await InvokeAsync(() => StateHasChanged());
+                alertMessage = "Đăng ký thành công với tài khoản người dùng!!!";
+                await http.PostAsync($"https://localhost:7280/api/Seeker?id={userId}", new StringContent("application/json"));
+                await Task.Delay(1000);
+                NavManager.NavigateTo("/login");
+
+            }
+            else
+            {
+                await InvokeAsync(() => StateHasChanged());
+                alertMessage = "Đăng ký thất bại!";
+                await Task.Delay(1000);
+                alertMessageShow = false;
+                alertMessage = "";
+                registrationModel.Password = "";
+            }
+        }
+        else
+        {
+            alertMessage = "Mật khẩu không khớp. Mời nhập lại!";
+            await Task.Delay(1000);
+            alertMessageShow = false;
+            alertMessage = "";
+            registrationModel.Password = "";
+            confirm = "";
+        }
+    }
+
+
+}
+
+

@@ -1,0 +1,186 @@
+﻿@page "/login"
+@inject NavigationManager NavManager
+@using System.Net.Http;
+@using System.Net.Http.Json;
+@using Api.Models
+@using Newtonsoft.Json;
+@inject IHttpContextAccessor HttpAccessor
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+
+
+<div class="slider-area ">
+    <div class="single-slider section-overly slider-height2 d-flex align-items-center" style="background-image: url('@ImageUrl')">
+        <div class="container">
+            <div class="row">
+                <div class="col-xl-12">
+                    <div class="hero-cap text-center">
+                        <h2>Đăng nhập</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="whole-wrap">
+    <div class="container box_1170">
+        <div class="section-top-border">
+				<div class="row">
+					<div class="col-lg-8 col-md-8">
+						@*<h3 class="mb-30">Form Element</h3>*@
+                    <EditForm Model="@loginModel" OnValidSubmit="Login">
+                        <DataAnnotationsValidator />
+                        <div class="mt-10">
+                            <input type="email" @bind-value="loginModel.Email" placeholder="Email" required class="single-input">
+                            <ValidationMessage For="@(() => loginModel.Email)" />
+                        </div>
+                        <br />
+                        <div class="mt-10">
+                            <input type="password" @bind-value="loginModel.Password" placeholder="Mật khẩu" required class="single-input">
+                            <ValidationMessage For="@(() => loginModel.Password)" />
+                        </div>
+                        <br />
+                        
+                        <div class="mt-3">
+
+                            <button @onclick="Login" class="btn btn-block btn-primary btn-lg font-weight-medium auth-form-btn" type="submit">
+                                Đăng nhập
+                            </button>
+                        </div>                       
+                        <div class="text-center mt-4 font-weight-light">
+                            Bạn không có tài khoản? <a href="/register" class="text-primary">Tạo tài khoản</a>
+                        </div>
+                        @if (!string.IsNullOrEmpty(alertMessage))
+                        {
+                            <div class="alert alert-danger" role="alert">@alertMessage</div>
+                        }
+
+                    </EditForm>
+					
+					</div>
+					<div class="col-lg-3 col-md-4 mt-sm-30">
+						<div class="single-element-widget">							
+						<img src="../assets/img/signup-image.jpg" alt="sing up image">
+						</div>
+                    
+					</div>
+				</div>
+			</div>
+    </div>
+</div>
+
+@code {
+
+    private string ImageUrl = "../assets/img/hero/about.jpg";
+
+    public LoginModel loginModel = new LoginModel();
+    HttpClient http = new HttpClient();
+    public string alertMessage;
+
+    private bool alertMessageShow = false;
+    private bool isLoggedIn = false;
+
+
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (isLoggedIn == true)
+        {
+            var response = await http.PostAsJsonAsync("https://localhost:7280/api/Login/login", new { loginModel.Email, loginModel.Password });
+            if (response.IsSuccessStatusCode)
+            {
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var responseObject = JsonConvert.DeserializeObject<Dictionary<string, string>>(responseContent);
+                int userTypeId = Convert.ToInt32(responseObject["UserTypeId"]);
+                int userId = Convert.ToInt32(responseObject["UserId"]);
+
+                if (userTypeId == 3)
+                {
+                    var res = await http.GetAsync($"https://localhost:7280/api/Company/GetByUserId/{userId}");
+                    if (res.IsSuccessStatusCode)
+                    {
+                        var str = await res.Content.ReadAsStringAsync();
+
+                        dynamic data = JsonConvert.DeserializeObject<dynamic>(str);
+                        int com = Convert.ToInt32(data["CompanyId"]);
+                        string comName = Convert.ToString(data["CompanyName"]);
+                        await sessionStorage.SetItemAsync("comId", com);
+                    }
+                    else
+                    {
+
+                        await sessionStorage.SetItemAsync("comId", 0);
+                    }
+                }
+
+                if (userTypeId == 2)
+                {
+                    var res2 = await http.GetAsync($"https://localhost:7280/api/Seeker/GetByUserId/{userId}");
+                    if (res2.IsSuccessStatusCode)
+                    {
+                        var str2 = await res2.Content.ReadAsStringAsync();
+
+                        dynamic data2 = JsonConvert.DeserializeObject<dynamic>(str2);
+                        int seekerId = Convert.ToInt32(data2["SeekerId"]);
+                        await sessionStorage.SetItemAsync("seekerId", seekerId);
+                    }
+                    else
+                    {
+
+                        await sessionStorage.SetItemAsync("seekerId", 0);
+                    }
+                }
+
+                await sessionStorage.SetItemAsync("Type", userTypeId);
+                await sessionStorage.SetItemAsync("ID", userId);
+            }
+        }
+
+    }
+    private async Task Login()
+    {
+        alertMessage = "Đang xử lý...";
+        alertMessageShow = true;
+        await Task.Delay(100);
+
+        var response = await http.PostAsJsonAsync("https://localhost:7280/api/Login/login", new { loginModel.Email, loginModel.Password });
+        if (response.IsSuccessStatusCode)
+        {
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var responseObject = JsonConvert.DeserializeObject<Dictionary<string, string>>(responseContent);
+            int userTypeId = Convert.ToInt32(responseObject["UserTypeId"]);
+            int userId = Convert.ToInt32(responseObject["UserId"]);
+            if (userTypeId == 2 || userTypeId == 3)
+            {
+                isLoggedIn = true;
+                await InvokeAsync(() => StateHasChanged());
+                alertMessage = "Đăng nhập thành công!!!";
+                await Task.Delay(500);
+                NavManager.NavigateTo("/");
+
+            }           
+            else
+            {
+                await InvokeAsync(() => StateHasChanged());
+                alertMessage = "Email hoặc mật khẩu không đúng. Mời nhập lại!";
+                await Task.Delay(500);
+                alertMessageShow = false;
+                alertMessage = "";
+                loginModel.Password = "";
+            }
+        }
+        else
+        {
+            await InvokeAsync(() => StateHasChanged());
+            alertMessage = "Email hoặc mật khẩu không đúng. Mời nhập lại!";
+            await Task.Delay(500);
+            alertMessageShow = false;
+            alertMessage = "";
+            loginModel.Password = "";
+
+        }
+    }
+    
+
+}

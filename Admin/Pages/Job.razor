@@ -1,0 +1,298 @@
+﻿@page "/job"
+@using Api.Models
+
+@inject HttpClient HttpClient
+@using CurrieTechnologies.Razor.SweetAlert2
+@inject SweetAlertService Swal
+
+
+
+    <div class="col-md-12">
+        <div class="card">
+            <div class="table-responsive pt-3">
+            
+                <table class="table table-striped project-orders-table">
+                    <thead>
+                        <tr>
+                            <th class="ml-5">Job ID</th>
+                            <th>Job Name</th>                           
+                            <th>Job Location</th>
+                            <th>Salary Range</th>
+                            <th>Active</th>
+                            <th>Company</th>
+                            <th>Category</th>
+                        </tr>
+                    </thead>
+                        @if (jobs != null)                        
+                        {
+                        <tbody>
+                         @foreach(var item in jobs)
+                        {                                        
+                        <tr>
+                            <td>@item.JobId</td>
+                            <td>@item.JobTitle</td>
+                            <td>@item.JobLocation</td>
+                            <td>@item.SalaryRange</td>
+                                <td>@if (item.IsActive)
+                                    {
+                                        <span>Yes</span>
+                                    }
+                                    else
+                                    {
+                                        <span>No</span>
+                                    }
+                                </td>
+                            <td>@item.Company?.CompanyName</td>
+                            <td>@item.Category?.CategoryName</td>                          
+                            <td>
+                                <div class="d-flex align-items-center">
+                                        <button @onclick="@(() => Detail(item.JobId))" type="button" class="btn btn-success btn-sm btn-icon-text mr-3" data-toggle="modal" data-target="#exampleModal">
+                                        Detail
+                                        <i class="typcn typcn-edit btn-icon-append"></i>
+                                    </button>
+                                        
+                                </div>
+                            </td>
+                        </tr>
+                        }                      
+                    </tbody>
+                    }
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Edit Job</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+
+                <EditForm Model="@editJob" OnValidSubmit="HandleEditSubmit">
+                    <DataAnnotationsValidator />
+                    <div class="form-group">
+                        <label>Job Title :</label>
+                        <input type="text" @bind-value="editJob.JobTitle" class="form-control" disabled>
+                        <ValidationMessage For="@(() => editJob.JobTitle)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Job Description :</label>                      
+                        @*<input type="text" @bind-value="editJob.JobDescription" class="form-control">*@
+                        <textarea @bind="editJob.JobDescription" class="form-control" disabled></textarea>
+                        <ValidationMessage For="@(() => editJob.JobDescription)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Job Location :</label>
+                        <input type="text" @bind-value="editJob.JobLocation" class="form-control" disabled>
+                        <ValidationMessage For="@(() => editJob.JobLocation)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Salary Range :</label>
+                        <input type="text" @bind-value="editJob.SalaryRange" class="form-control" disabled>
+                        <ValidationMessage For="@(() => editJob.SalaryRange)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="isActive">Is Active:</label>
+                        <InputCheckbox style="margin-left: 20px" @bind-Value="@editJob.IsActive" id="isActive" disabled />
+                        <ValidationMessage For="@(() => editJob.IsActive)" />
+                        @if (editJob.IsActive)
+                        {
+                            <span style="margin-left: 20px">Active</span>
+                        }
+                        else
+                        {
+                            <span style="margin-left: 20px">Inactive</span>
+                        }
+                    </div>
+                    <div class="form-group">
+                        <label>Expired Date :</label>
+                       @* <input type="text" @bind-value="editJob.ExpiredDate" class="form-control">*@
+                        <InputDate Type="InputDateType.DateTimeLocal" class="form-control"
+                                   min="@DateTime.Today.ToString("yyyy-MM-dd")" @bind-Value="editJob.ExpiredDate" disabled />
+                        <ValidationMessage For="@(() => editJob.ExpiredDate)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="@editJob.CompanyId">Company :</label>
+                        <select id="@editJob.CompanyId" @bind="editJob.CompanyId" class="form-control" disabled>
+                            <option value="">-- Select Company --</option>
+                            @foreach (var company in companies)
+                            {
+                                <option value="@company.CompanyId">@company.CompanyName</option>
+                            }
+                        </select>
+                        <ValidationMessage For="@(() => editJob.CompanyId)" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="@editJob.CategoryId">Category :</label>
+                        <select id="@editJob.CategoryId" @bind="editJob.CategoryId" class="form-control" disabled>
+                            <option value="">-- Select Category --</option>
+                            @foreach (var category in categories)
+                            {
+                                <option value="@category.CategoryId">@category.CategoryName</option>
+                            }
+                        </select>
+                        <ValidationMessage For="@(() => editJob.CategoryId)" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="@editJob.TypeId">Type Of Work:</label>
+                        <select id="@editJob.TypeId" required @bind="editJob.TypeId" class="form-control" disabled>
+                            <option value="">-- Select Type --</option>
+                            @foreach (var item in typeWorks)
+                            {
+                                <option value="@item.TypeId">@item.TypeName</option>
+                            }
+                        </select>
+                        <ValidationMessage For="@(() => editJob.TypeId)" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="@editJob.LevId">Level Of Work:</label>
+                        <select id="@editJob.LevId" required @bind="editJob.LevId" class="form-control" disabled>
+                            <option value="">-- Select Level --</option>
+                            @foreach (var item in levelOfWorks)
+                            {
+                                <option value="@item.LevId">@item.LevelName</option>
+                            }
+                        </select>
+                        <ValidationMessage For="@(() => editJob.LevId)" />
+                    </div>
+                    @*<button type="submit" class="btn btn-primary">Save</button>*@
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>                    
+                    @*@if (!string.IsNullOrEmpty(alertMessage))
+                    {
+                        <div class="form-group">
+                            <label style="margin-top: 20px">Notification :</label>
+                            <div class="alert alert-danger" role="alert">@alertMessage</div>
+                        </div>
+                    }*@
+                </EditForm>
+                </div>             
+            </div>
+        </div>
+    </div>
+
+
+
+
+@code {
+    private List<JobList> jobs = new List<JobList>();
+    private List<Company> companies = new List<Company>();
+    private List<Category> categories = new List<Category>();
+    private List<TypeWork> typeWorks = new List<TypeWork>();
+    private List<LevelOfWork> levelOfWorks = new List<LevelOfWork>();
+
+
+    private JobItem newJob = new JobItem();
+    private JobItem editJob = new JobItem();
+
+    public string alertMessage;
+
+    string api_url = "https://localhost:7280/";
+
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        jobs = await HttpClient.GetFromJsonAsync<List<JobList>>(api_url + "api/JobList");       
+        companies = await HttpClient.GetFromJsonAsync<List<Company>>(api_url + "api/Company");
+        categories = await HttpClient.GetFromJsonAsync<List<Category>>(api_url + "api/Category");
+        typeWorks = await HttpClient.GetFromJsonAsync<List<TypeWork>>(api_url + "api/Type");
+        levelOfWorks = await HttpClient.GetFromJsonAsync<List<LevelOfWork>>(api_url + "api/Level");
+
+    }
+
+    async Task HandleEditSubmit()
+    {      
+        var response = await HttpClient.PutAsJsonAsync(api_url + $"api/JobList/{editJob.Id}", editJob);
+        if (response.IsSuccessStatusCode)
+        {          
+
+            await OnInitializedAsync();
+            await Swal.FireAsync("Success!", "Job edited successfully!", SweetAlertIcon.Success);
+            
+        }
+        else
+        {
+            await Swal.FireAsync("Falied!", "Job edited failed!", SweetAlertIcon.Error);
+        }
+    }
+    async Task HandleCreateSubmit()
+    {
+        var response = await HttpClient.PostAsJsonAsync(api_url + "api/JobList", newJob);
+        if (response.IsSuccessStatusCode)
+        {          
+            await OnInitializedAsync();
+            newJob = new JobItem();
+            await Swal.FireAsync("Success!", "Job created successfully!", SweetAlertIcon.Success);
+        }
+        else
+        {
+            await Swal.FireAsync("Failed!", " Job created failed!", SweetAlertIcon.Error);
+        }
+    }
+
+
+    private async Task ConfirmDelete(int id)
+    {
+        var confirmationResult = await Swal.FireAsync(
+            new SweetAlertOptions
+                {
+                    Title = "Are you sure?",
+                    Text = "You won't be able to revert this!",
+                    Icon = SweetAlertIcon.Warning,
+                    ShowCancelButton = true,
+                    ConfirmButtonText = "Yes, delete it!",
+                    CancelButtonText = "No, cancel!"
+                }
+        );
+
+        if (confirmationResult.IsConfirmed)
+        {
+            await DeleteJob(id);           
+        }
+    }
+
+    async Task DeleteJob(int id)
+    {
+        var response = await HttpClient.DeleteAsync(api_url + $"api/JobList/{id}");
+        if (response.IsSuccessStatusCode)
+        {
+            // Cập nhật danh sách công việc sau khi xóa thành công
+            await OnInitializedAsync();
+            await Swal.FireAsync("Success!", "Job deleted successfully!", SweetAlertIcon.Success);
+        }
+        else
+        {
+            await Swal.FireAsync("Failed!", "Job deleted failed!", SweetAlertIcon.Error);
+        }
+    }
+
+    void Detail(int id)
+    {
+        alertMessage = "";
+        var str = jobs.FirstOrDefault(x => x.JobId == id);
+        editJob.Id = str.JobId;
+        editJob.JobTitle = str.JobTitle;
+        editJob.JobDescription = str.JobDescription;
+        editJob.JobLocation = str.JobLocation;
+        editJob.SalaryRange = str.SalaryRange;
+        editJob.IsActive = str.IsActive;
+        editJob.ExpiredDate = str.ExpiredDate;
+        editJob.CompanyId = str.CompanyId;
+        editJob.CategoryId = str.CategoryId;
+        editJob.TypeId = str.TypeId;
+        editJob.LevId = str.LevId;
+    }
+}  
+
+
+

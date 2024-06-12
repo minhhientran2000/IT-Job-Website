@@ -1,0 +1,116 @@
+﻿<!DOCTYPE html>
+<html lang="en" moznomarginboxes>
+<head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Cardo|Montserrat:300,400,500&amp;subset=latin-ext" crossorigin="anonymous" />
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css" integrity="sha256-oSrCnRYXvHG31SBifqP2PM1uje7SJUyX0nTwO2RJV54=" crossorigin="anonymous" />
+    <link rel="stylesheet" type="text/css" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css" integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt" crossorigin="anonymous" />
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="styles/style.css">
+  <!--  <link rel="stylesheet" href="styles/fontawesome-all.min.css">-->
+    <!--<link rel="stylesheet" href="styles/bootstrap.min.css">-->
+
+    <title>HTML Resume Template</title>
+</head>
+<body class="letter">
+    <section id="save">
+        <section class="sheet">
+            <aside>
+                <section class="contact">
+                    <img style="width: 63%;" src="@cvData.Photo" />
+                    <h5><b>Contact</b></h5>
+                    <ul>
+                        <li>
+                            <p style="display: flex; align-items: center;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" style="margin-right: 0.5em;"><path fill="currentColor" d="M12 11.5A2.5 2.5 0 0 1 9.5 9A2.5 2.5 0 0 1 12 6.5A2.5 2.5 0 0 1 14.5 9a2.5 2.5 0 0 1-2.5 2.5M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7" /></svg>
+                                <span style="overflow-wrap: break-word;">@cvData.Address</span>
+                            </p>
+                        </li>
+                        <li>
+                            <p style="display: flex; align-items: center;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" style="margin-right: 0.5em;">
+                                    <path fill="currentColor" d="M14.566 19.152A18.466 18.466 0 0 1 5 9.86v-.002l-.519-1.14a3.5 3.5 0 0 1 1.237-4.355l1.333-.894a1 1 0 0 1 1.335.203l2.43 3.012a1 1 0 0 1-.183 1.431l-1.257.932a12.14 12.14 0 0 0 5.511 5.51l.932-1.256a1 1 0 0 1 1.431-.183l3.012 2.43a1 1 0 0 1 .203 1.335l-.888 1.324a3.5 3.5 0 0 1-4.331 1.247z" />
+                                    <path fill="currentColor" d="M13.75 9a.75.75 0 0 0 .75.75h3.828a.75.75 0 0 0 0-1.5h-2.017l3.159-3.159a.75.75 0 1 0-1.061-1.06L15.25 7.188V5.172a.75.75 0 0 0-1.5 0z" />
+                                </svg>
+                                <span style="overflow-wrap: break-word;">@cvData.PhoneNumber</span>
+                            </p>
+                        </li>
+                        <li>
+                            <p style="display: flex; align-items: center;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" style="margin-right: 0.5em;"><path fill="currentColor" d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2m0 4l-8 5l-8-5V6l8 5l8-5z" /></svg>
+                                <span style="overflow-wrap: break-word;">@cvData.Email</span>
+                            </p>
+                        </li>
+                        <li>
+                            <p style="display: flex; align-items: center;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 32 32" style="margin-right: 0.5em;"><path fill="currentColor" d="M31.396 14.573L17.422.604a2.06 2.06 0 0 0-2.917 0l-2.896 2.901l3.682 3.677a2.444 2.444 0 0 1 2.516.589c.688.688.88 1.677.589 2.531l3.542 3.547a2.439 2.439 0 0 1 2.531.583c.964.958.964 2.51 0 3.469a2.447 2.447 0 0 1-3.464 0a2.462 2.462 0 0 1-.542-2.661l-3.318-3.302v8.703c.234.115.458.271.651.464c.953.964.953 2.51 0 3.469a2.465 2.465 0 0 1-3.479 0a2.453 2.453 0 0 1 .807-4.005v-8.786a2.587 2.587 0 0 1-.802-.536a2.442 2.442 0 0 1-.526-2.677l-3.615-3.635l-9.583 9.578a2.078 2.078 0 0 0 0 2.917l13.974 13.969a2.06 2.06 0 0 0 2.917 0l13.906-13.906a2.06 2.06 0 0 0 0-2.917z" /></svg>
+                                <span style="overflow-wrap: break-word;">@cvData.GitUrl</span>
+                            </p>
+                        </li>
+
+
+                    </ul>
+                </section>
+                <section class="skills">
+                    <h5><b>Skills</b></h5>
+                    <ul>
+                        @cvData.Skill
+                    </ul>
+                </section>
+
+                <section class="contact">
+                    <h5><b>Awards</b></h5>
+                    <ul style="list-style-type: none; overflow-wrap: break-word;">
+                        @cvData.Certificate
+                    </ul>
+                </section>
+
+                <!--<section class="references">
+                    <h6>References</h6>
+                    <address>
+                        @cvData.Reference
+                    </address>
+                </section>-->
+            </aside>
+            <section>
+                <header class="name" aria-label="">
+                    <h3><b>@cvData.Name</b></h3>
+                    <h6>@cvData.Target</h6>
+                    <hr />
+                </header>
+                <section style="margin-top: 20px;">
+                    <section class="summary">
+                        <h5><b>Summary</b></h5>
+                        <p>@cvData.Summary</p>
+                    </section>
+                    <section class="experience">
+                        <h5><b>Experiences</b></h5>
+                        <ol>
+                            @cvData.WorkExperiences
+                        </ol>
+
+                    </section>
+
+                    <section class="experience">
+                        <h5><b>Projects</b></h5>
+                        <ol>
+                            @cvData.Projects
+                        </ol>
+                    </section>
+
+                    <section class="education">
+                        <h5><b>Education</b></h5>
+                        <ol>
+                            @cvData.Education
+
+                        </ol>
+                    </section>
+                </section>
+            </section>
+        </section>
+    </section>
+
+    <!-- <script type="text/javascript" src="./index.js"></script> -->
+</body>
+
+</html>

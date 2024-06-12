@@ -1,0 +1,642 @@
+﻿@page "/createcv"
+
+@using Api.Models;
+@using Api.Models.CV;
+@using System.Text;
+@using System.Text.Json;
+@inject HttpClient Http
+@using Microsoft.JSInterop
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavManager
+@using CurrieTechnologies.Razor.SweetAlert2
+@inject SweetAlertService Swal
+
+ <div class="container">
+    <div class="d-none d-sm-block mb-5 pb-4">
+
+        <div class="row">
+           
+            <div class="col-lg-12">
+                @*<form class="form-contact contact_form" action="contact_process.php" method="post" id="contactForm" novalidate="novalidate">*@
+                    <EditForm Model="@cv" class="form-contact contact_form">
+                    <DataAnnotationsValidator />
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <input type="text" placeholder="Tên người dùng" id="name" required class="form-control" @bind="cv.Name" />
+                                <ValidationMessage For="@(() => cv.Name)" />
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <input type="text" placeholder="Mục tiêu" id="name" required class="form-control" @bind="cv.Target" />
+                                <ValidationMessage For="@(() => cv.Target)" />
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="form-group">
+                                <input type="number" placeholder="Số điện thoại" required id="name" class="form-control" @bind="cv.PhoneNumber" />
+                                <ValidationMessage For="@(() => cv.PhoneNumber)" />
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="form-group">
+                                <input type="text" placeholder="Email" required id="name" class="form-control" @bind="cv.Email" />
+                                <ValidationMessage For="@(() => cv.Email)" />
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="form-group">
+                                <input type="text" placeholder="Git URL" required id="name" class="form-control" @bind="cv.GitUrl" />
+                                <ValidationMessage For="@(() => cv.GitUrl)" />
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-group">
+                                <input type="text" placeholder="Địa chỉ" id="name" required class="form-control" @bind="cv.Address" />
+                                <ValidationMessage For="@(() => cv.Address)" />
+                            </div>
+                        </div>
+                        
+                        <div class="col-12">
+                            <div class="form-group">
+                                <textarea class="form-control w-100" name="message" id="message" type="number" placeholder="Career summary" required @bind="cv.Summary"></textarea>
+                                <ValidationMessage For="@(() => cv.Summary)" />
+                            </div>
+                        </div>
+                        <div class="col-12" style="display: flex;">
+                            <h5 style="margin-right: 10px; margin-bottom: 50px;">Ảnh hồ sơ:</h5>
+                            <InputFile OnChange="@OnInputFileChange" accept=".jpg,.jpeg,.png,.gif" />                                               
+                        </div>
+                    </div>
+
+                        @*Education*@
+                        <div class="form-group" style="border: 1px solid gray; padding: 10px 20px; border-radius: 16px;">
+                            <h3>Học vấn</h3>
+                            @if (listedu.Count != 0)
+                            {
+                                <table class="table table-striped project-orders-table">
+                                    <tr>
+                                        <th>Tên trường</th>
+                                        <th>GPA</th>
+                                        <th>Chuyên ngành</th>
+                                        <th>Năm bắt đầu - Năm kết thúc</th>
+                                        <th></th>
+                                    </tr>
+                                    @foreach (var education in listedu)
+                                    {
+                                        <tr>
+                                            <td>@education.Institution</td>
+                                            <td>@education.GPA</td>
+                                            <td>@education.Major</td>
+                                            <td>@education.Year</td>
+                                            <td><a type="button" class="btn btn-primary" @onclick="@(() => DeleteEdu(education.Institution))">Xóa</a></td>
+                                        </tr>
+                                    }
+                                </table>
+                            }
+
+                            <div class="form-group">
+                                <button type="button" class="btn btn-primary" @onclick="AddEducation">Thêm</button>
+                            </div>
+                            @if (showAddEducation)
+                            {
+                                <div class="form-group">
+                                    <h2>Thêm phần học vấn</h2>
+                                    <label for="schoolName">Tên trường:</label>
+                                    <input type="text" id="schoolName" class="form-control" @bind-value="edu.Institution" />
+
+                                    <label for="degree">Bằng cấp:</label>
+                                    <input type="text" id="degree" class="form-control" @bind-value="edu.GPA" />
+
+                                    <label for="major">Chuyên ngành:</label>
+                                    <input type="text" id="major" class="form-control" @bind-value="edu.Major" />
+
+                                    <label for="endDate">Ngày bắt đầu - Ngày kết thúc:</label>
+                                    <input type="text" id="endDate" class="form-control" @bind-value="edu.Year" />
+
+                                    <button type="button" class="btn btn-primary" @onclick="SaveEducation">Lưu</button>
+                                    <button type="button" class="btn btn-secondary" @onclick="CancelEducation">Hủy</button>
+                                </div>
+                            }
+                        </div>
+
+                        @*Work EXP*@
+                        <div class="form-group" style="border: 1px solid gray; padding: 10px 20px; border-radius: 16px;">
+                            <h3>Kinh nghiệm làm việc</h3>
+                            @if (listexp.Count != 0)
+                            {
+                            <table class="table table-striped project-orders-table">
+                                    <tr>
+                                        <th>Công ty</th>
+                                        <th>Vị trí công việc</th>
+                                        <th>Thời gian bắt đầu - Kết thúc</th>
+                                    <th style="" overflow-wrap: break-word;"">Mô tả công việc</th>
+                                        <th></th>
+                                    </tr>
+                                    @foreach (var education in listexp)
+                                    {
+                                        <tr>
+                                            <td>@education.Company</td>
+                                            <td>@education.Title</td>
+                                            <td>@education.Year</td>
+                                            <td>@education.Description</td>
+                                            <td><a type="button" class="btn btn-primary" @onclick="@(() => DeleteExp(education.Title))">Xóa</a></td>
+                                        </tr>
+                                    }
+                                </table>
+                            }
+
+                            <div class="form-group">
+                                <button type="button" class="btn btn-primary" @onclick="AddExp">Thêm</button>
+                            </div>
+                            @if (showAddExp)
+                            {
+                                <div class="form-group">
+                                    <h2>Thêm kinh nghiệm</h2>
+                                    <label for="schoolName">Tên công ty:</label>
+                                    <input type="text" id="schoolName" class="form-control" @bind-value="exp.Company" />
+
+                                    <label for="degree">Vị trí công việc:</label>
+                                    <input type="text" id="degree" class="form-control" @bind-value="exp.Title" />
+
+                                    <label for="major">Năm bắt đầu - Năm kết thúc:</label>
+                                    <input type="text" id="major" class="form-control" @bind-value="exp.Year" />
+
+                                    <label for="endDate">Mô tả công việc:</label>
+                                    <input type="text" id="endDate" class="form-control" @bind-value="exp.Description" />
+
+                                    <button type="button" class="btn btn-primary" @onclick="SaveExp">Lưu</button>
+                                    <button type="button" class="btn btn-secondary" @onclick="CancelExp">Hủy</button>
+                                </div>
+                            }
+                        </div>
+
+                        @*Skill*@
+                        <div class="form-group" style="border: 1px solid gray; padding: 10px 20px; border-radius: 16px;">
+                            <h3>Kỹ năng</h3>
+                            @if (listskill.Count != 0)
+                            {
+                            <table class="table table-striped project-orders-table">
+                                    <tr>
+                                        <th>Tên kỹ năng</th>                                       
+                                        <th></th>
+                                    </tr>
+                                    @foreach (var education in listskill)
+                                    {
+                                        <tr>
+                                            <td>@education.Name</td>                                         
+                                            <td><a type="button" class="btn btn-primary" @onclick="@(() => DeleteSkill(education.Name))">Xóa</a></td>
+                                        </tr>
+                                    }
+                                </table>
+                            }
+                            <div class="form-group">
+                                <button type="button" class="btn btn-primary" @onclick="AddSkill">Thêm</button>
+                            </div>
+                            @if (showAddSkill)
+                            {
+                                <div class="form-group">
+                                    <h2>Thêm kỹ năng</h2>
+                                    <label for="schoolName">Tên kỹ năng:</label>
+                                    <input type="text" id="schoolName" class="form-control" @bind-value="skill.Name" />
+
+                                    <button type="button" class="btn btn-primary" @onclick="SaveSkill">Lưu</button>
+                                    <button type="button" class="btn btn-secondary" @onclick="CancelSkill">Hủy</button>
+                                </div>
+                            }
+                        </div>
+
+                        @*Project*@
+                        <div class="form-group" style="border: 1px solid gray; padding: 10px 20px; border-radius: 16px;">
+                            <h3>Dự án cá nhân</h3>
+                            @if (listproj.Count != 0)
+                            {
+                            <table class="table table-striped project-orders-table">
+                                    <tr>
+                                        <th>Tên dự án</th>
+                                        <th style="" overflow-wrap: break-word;"">Mô tả</th>
+                                        <th>Thời gian</th>
+                                        <th style="" overflow-wrap: break-word;"">Tính năng nổi bật</th>
+                                        <th style="" overflow-wrap: break-word;"">Công nghệ sử dụng</th>
+                                        <th>Link dự án</th>
+                                        <th></th>
+                                    </tr>
+                                    @foreach (var education in listproj)
+                                    {
+                                        <tr>
+                                            <td>@education.Name</td>
+                                            <td>@education.Description</td>
+                                            <td>@education.Year</td>
+                                            <td>@education.Features</td>
+                                            <td>@education.Technology</td>
+                                            <td>@education.Link</td>
+
+                                            <td><a type="button" class="btn btn-primary" @onclick="@(() => DeleteProject(education.Name))">Xóa</a></td>
+                                        </tr>
+                                    }
+                                </table>
+                            }
+                            <div class="form-group">
+                                <button type="button" class="btn btn-primary" @onclick="AddProject">Thêm</button>
+                            </div>
+                            @if (showAddProject)
+                            {
+                                <div class="form-group">
+                                    <h2>Thêm dự án</h2>
+                                    <label for="">Tên dự án:</label>
+                                    <input type="text" id="" class="form-control" @bind-value="proj.Name" />
+
+                                    <label>Mô tả:</label>
+                                    <textarea type="text" class="form-control" @bind="proj.Description"></textarea>
+
+                                    <label>Thời gian:</label>
+                                    <input type="text" class="form-control" @bind-value="proj.Year" />
+
+                                    <label>Tính năng nổi bật:</label>
+                                    <input type="text" class="form-control" @bind-value="proj.Features" />
+
+                                    <label>Công nghệ:</label>
+                                    <input type="text" class="form-control" @bind-value="proj.Technology" />
+
+                                    <label>Link dự án:</label>
+                                    <input type="text" class="form-control" @bind-value="proj.Link" />
+
+                                    <button type="button" class="btn btn-primary" @onclick="SaveProject">Lưu</button>
+                                    <button type="button" class="btn btn-secondary" @onclick="CancelProject">Hủy</button>
+                                </div>
+                            }
+                        </div>
+
+                        @*Award*@
+                        <div class="form-group" style="border: 1px solid gray; padding: 10px 20px; border-radius: 16px;">
+                            <h3>Thành tựu, giải thưởng</h3>
+                            @if (listcer.Count != 0)
+                            {
+                                <table class="table table-striped project-orders-table">
+                                    <tr>
+                                        <th>Tên giải thưởng</th>
+                                        <th></th>
+                                    </tr>
+                                    @foreach (var education in listcer)
+                                    {
+                                        <tr>
+                                            <td>@education.Name</td>
+                                            <td><a type="button" class="btn btn-primary" @onclick="@(() => DeleteCertificate(education.Name))">Xóa</a></td>
+                                        </tr>
+                                    }
+                                </table>
+                            }
+                            <div class="form-group">
+                                <button type="button" class="btn btn-primary" @onclick="AddCertificate">Thêm</button>
+                            </div>
+                            @if (showAddCertificate)
+                            {
+                                <div class="form-group">
+                                    <h2>Thêm giải thưởng</h2>
+                                    <label for="">Tên giải thưởng:</label>
+                                    <input type="text" id="" class="form-control" @bind-value="cer.Name" />
+
+                                    <button type="button" class="btn btn-primary" @onclick="SaveCertificate">Lưu</button>
+                                    <button type="button" class="btn btn-secondary" @onclick="CancelCertificate">Hủy</button>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="form-group mt-3">
+                            <button class="btn btn-primary" @onclick="GenerateCv">Tạo CV</button>
+                        </div>
+                @*</form>*@
+                    @if (!string.IsNullOrEmpty(pdfPath))
+                    {
+                        <p>Ấn vào link dưới để mở file CV của bạn</p>
+                        <p><a href="@pdfPath" target="_blank"><i><u>Open PDF</u></i></a></p>
+                        <p><a href="@pdfPath" download="cv.pdf"><i><u>Download PDF</u></i></a></p>
+                    }
+                    @if (!string.IsNullOrEmpty(notify))
+                    {
+                        <p>@notify</p>
+                    }
+
+                    
+
+
+                </EditForm>
+
+            </div>
+           
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Seeker CV</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                @if (!string.IsNullOrEmpty(pdfPath))
+                {
+
+
+                    <EditForm Model="@pdfPath">
+                        <DataAnnotationsValidator />
+                        <object data="@pdfPath" type="application/pdf" width="100%" height="400px">
+                            <embed src="@pdfPath" type="application/pdf" />
+                        </object>
+
+                        @*<button type="submit" class="btn btn-primary">Save</button>*@
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+
+                    </EditForm>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@code {
+    private CvData cv = new CvData();
+    private string str = "No";
+    private string pdfPath;
+    private string notify;
+
+    private bool showAddEducation { get; set; } = false;
+    private bool showAddExp { get; set; } = false;
+    private bool showAddSkill { get; set; } = false;
+    private bool showAddRef { get; set; } = false;
+    private bool showAddProject { get; set; } = false;
+    private bool showAddCertificate { get; set; } = false;
+
+    private Education edu = new Education();
+    private WorkExperience exp = new WorkExperience();
+    private Skill skill = new Skill();
+
+    private Project proj = new Project();
+    private Certificate cer = new Certificate();
+
+    private List<Education> listedu = new List<Education>();
+    private List<WorkExperience> listexp = new List<WorkExperience>();
+    private List<Skill> listskill = new List<Skill>();
+
+    private List<Project> listproj = new List<Project>();
+    private List<Certificate> listcer = new List<Certificate>();
+
+
+    async Task GenerateCv()
+    {
+        if (cv.Email != null && cv.Name != null && cv.PhoneNumber != null && cv.Address != null && cv.Summary != null && cv.GitUrl != null && cv.Target != null)
+        {
+            cv.Education = listedu;
+            cv.WorkExperiences = listexp;
+            cv.Skills = listskill;
+            cv.Projects = listproj;
+            cv.Certificates = listcer;
+
+            var cvData = JsonSerializer.Serialize(cv);
+            var content = new StringContent(cvData, Encoding.UTF8, "application/json");
+            notify += "Xin chờ trong giây lát...";
+            await Swal.FireAsync("Thành công!", "Hệ thống đang xử lý thông tin của bạn!", SweetAlertIcon.Success);
+
+            var response = await Http.PostAsync($"https://localhost:7280/api/CreateCV", content);
+            response.EnsureSuccessStatusCode();
+            var pdfBytes = await response.Content.ReadAsByteArrayAsync();
+
+            // Convert PDF bytes to base64 string
+            string base64String = Convert.ToBase64String(pdfBytes);
+
+            // Create data URL
+            pdfPath = await JSRuntime.InvokeAsync<string>("createBlobUrl", base64String, "application/pdf");
+            notify = "";
+        }
+    }
+
+    private async Task DownloadPDF()
+    {
+        // Call JavaScript to open the PDF in a new tab
+        //await JSRuntime.InvokeVoidAsync("open", pdfPath);
+        await JSRuntime.InvokeVoidAsync("openInNewTab", pdfPath);
+
+    }
+
+    private void AddEducation()
+    {
+        showAddEducation = !showAddEducation;
+    }
+
+    private void SaveEducation()
+    {
+        if (string.IsNullOrEmpty(edu.Institution))
+        {
+            return;
+        }
+        listedu.Add(edu);
+        edu = new Education();
+        showAddEducation = false;
+    }
+
+    private void CancelEducation()
+    {
+        showAddEducation = false;
+    }
+
+    private void DeleteEdu(string str)
+    {
+        var item = listedu.Find(x => x.Institution == str);
+        listedu.Remove(item);
+    }
+
+
+    private void AddExp()
+    {
+        showAddExp = !showAddExp;
+    }
+
+    private void SaveExp()
+    {
+        if (string.IsNullOrEmpty(exp.Company))
+        {
+            return;
+        }
+        listexp.Add(exp);
+        exp = new WorkExperience();
+        showAddExp = false;
+    }
+
+    private void CancelExp()
+    {
+        showAddExp = false;
+    }
+
+    private void DeleteExp(string str)
+    {
+        var item = listexp.Find(x => x.Title == str);
+        listexp.Remove(item);
+    }
+
+
+    private void AddSkill()
+    {
+        showAddSkill = !showAddSkill;
+    }
+
+    private void SaveSkill()
+    {
+        if (string.IsNullOrEmpty(skill.Name))
+        {
+            return;
+        }
+        listskill.Add(skill);
+        skill = new Skill();
+        showAddSkill = false;
+    }
+
+    private void CancelSkill()
+    {
+        showAddSkill = false;
+    }
+
+    private void DeleteSkill(string str)
+    {
+        var item = listskill.Find(x => x.Name == str);
+        listskill.Remove(item);
+    }
+
+
+    private void AddProject()
+    {
+        showAddProject = !showAddProject;
+    }
+
+    private void SaveProject()
+    {
+        if (string.IsNullOrEmpty(proj.Name))
+        {
+            return;
+        }
+        listproj.Add(proj);
+        proj = new Project();
+        showAddProject = false;
+    }
+
+    private void CancelProject()
+    {
+        showAddProject = false;
+    }
+
+    private void DeleteProject(string str)
+    {
+        var item = listproj.Find(x => x.Name == str);
+        listproj.Remove(item);
+    }
+
+
+
+    private void AddCertificate()
+    {
+        showAddCertificate = !showAddCertificate;
+    }
+
+    private void SaveCertificate()
+    {
+        if (string.IsNullOrEmpty(cer.Name))
+        {
+            return;
+        }
+        listcer.Add(cer);
+        cer = new Certificate();
+        showAddCertificate = false;
+    }
+
+    private void CancelCertificate()
+    {
+        showAddCertificate = false;
+    }
+
+    private void DeleteCertificate(string str)
+    {
+        var item = listcer.Find(x => x.Name == str);
+        listcer.Remove(item);
+    }
+
+
+    private async Task OnInputFileChange(InputFileChangeEventArgs e)
+    {
+
+        IBrowserFile imgFile = e.File;
+        var buffers = new byte[imgFile.Size];
+        await imgFile.OpenReadStream().ReadAsync(buffers);
+        string imageType = imgFile.ContentType;
+        string fileName = imgFile.Name;
+        cv.Photo = $"data:{imageType};base64,{Convert.ToBase64String(buffers)}";
+
+        /*IBrowserFile selectedFiles = e.File;
+        Stream stream = selectedFiles.OpenReadStream();
+        var path = $"{env.WebRootPath}\\{selectedFiles.Name}";
+        FileStream fs = File.Create(path);
+        await stream.CopyToAsync(fs);
+        editComp.Photo = $"/{Path.GetFileName(path)}";
+        stream.Close();
+        fs.Close();
+        StateHasChanged();*/
+
+    }
+
+
+}
+
+
+        @*<div class="form-group">
+                            <h3>References</h3>
+                            @if (listref.Count != 0)
+                            {
+                                <table>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Company</th>
+                                        <th>PhoneNumber</th>
+                                        <th>Email</th>
+                                        <th></th>
+                                    </tr>
+                                    @foreach (var education in listref)
+                                    {
+                                        <tr>
+                                            <td>@education.Name</td>
+                                            <td>@education.Company</td>
+                                            <td>@education.PhoneNumber</td>
+                                            <td>@education.Email</td>
+                                            <td><a type="button" class="btn btn-primary" @onclick="@(() => DeleteRef(education.Name))">Delete</a></td>
+                                        </tr>
+                                    }
+                                </table>
+                            }
+                            <div class="form-group">
+                                <button type="button" class="btn btn-primary" @onclick="AddRef">Add Reference</button>
+                            </div>
+                            @if (showAddRef)
+                            {
+                                <div class="form-group">
+                                    <h2>Thêm phần reference</h2>
+                                    <label for="schoolName">Name:</label>
+                                    <input type="text" id="schoolName" class="form-control" @bind-value="refe.Name" />
+
+                                    <label>Company:</label>
+                                    <input type="text" class="form-control" @bind-value="refe.Company" />
+
+                                    <label>PhoneNumber:</label>
+                                    <input type="number" class="form-control" @bind-value="refe.PhoneNumber" />
+
+                                    <label>Email:</label>
+                                    <input type="text" class="form-control" @bind-value="refe.Email" />
+
+                                    <button type="button" class="btn btn-primary" @onclick="SaveRef">Lưu</button>
+                                    <button type="button" class="btn btn-secondary" @onclick="CancelRef">Hủy</button>
+                                </div>
+                            }
+                        </div>*@

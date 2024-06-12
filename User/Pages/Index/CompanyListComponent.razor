@@ -1,0 +1,139 @@
+﻿@page "/companylist"
+
+@inject HttpClient HttpClient
+@using System.Net.Http;
+@using System.Net.Http.Json;
+@using Api.Models
+@using Newtonsoft.Json;
+@inject NavigationManager NavManager
+@using CurrieTechnologies.Razor.SweetAlert2
+@inject SweetAlertService Swal
+
+<style>
+    .card-img{
+        width: 70%;
+    }
+</style>
+
+<div class="slider-area ">
+    <div class="single-slider section-overly slider-height2 d-flex align-items-center" style="background-image: url('@ImageUrl')">
+        <div class="container">
+            <div class="row">
+                <div class="col-xl-12">
+                    <div class="hero-cap text-center">
+                        <h2>Danh sách công ty</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="job-listing-area mt-50">
+    <div class="container">
+        <div class="row">
+                <div class="col-xl-9 col-lg-9 col-md-8">
+                    <!-- Featured_job_start -->
+                    <section class="featured-job-area">
+                        <div class="container" style="display: grid; grid-template-columns: 1fr 1fr 1fr;gap: 10px;">
+                            <!-- single-job-content -->
+                        @foreach (var item in companies)
+                        {
+                            <div class="single-job-items">
+                                <div class="job-items">
+                                    <div class="blog_item_img">
+                                        <img class="card-img rounded-0" src="@item.CompanyPhoto" alt="">
+                                    </div>
+
+                                    <div class="blog_details">
+                                        <a class="d-inline-block" href="single-blog.html">
+                                            <h2>@item.CompanyName</h2>
+                                        </a>
+                                        <p style="height: 85px; overflow: hidden;">
+                                            @item.CompanyDescription
+                                        </p>
+                                        <ul class="blog-info-link">
+                                            <li><a href="#" @onclick="@(() => NavigateToDetails(item.CompanyId))">Xem thêm</a></li>
+                                           
+                                        </ul>
+                                    </div>
+                                </div>
+
+                            </div>
+                            }
+                            
+                        </div>
+                    </section>
+                    <!-- Featured_job_end -->
+                </div>
+            
+           
+
+            <div class="col-xl-3 col-lg-3 col-md-4">
+                <div class="blog_right_sidebar">
+                    <aside class="single_sidebar_widget search_widget">
+                        <form action="#">
+                            <div class="form-group">
+                                <div class="input-group mb-3">
+                                    <input @bind="SearchTerm" class="form-control" @oninput="Search" placeholder="Tìm kiếm..." />
+                                </div>
+                            </div>
+                            <button class="button rounded-0 primary-bg text-white w-100 btn_1 boxed-btn"
+                                    type="submit">
+                                Search
+                            </button>
+                        </form>
+                    </aside>
+
+                   
+                </div>
+               
+            </div>
+        </div>
+    </div>
+</div>
+
+@code{
+    private string ImageUrl = "assets/img/hero/about.jpg";
+    private string SearchTerm { get; set; }
+
+    HttpClient http = new HttpClient();
+    public List<Company> companies = new List<Company>();
+    string api_url = "https://localhost:7280/";
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        //type = await sessionStorage.GetItemAsync<int>("Type");
+        companies = await http.GetFromJsonAsync<List<Company>>(api_url + "api/Company"); 
+    }
+
+    private async Task Search(ChangeEventArgs e)
+    {
+        // Gán giá trị tìm kiếm từ input vào SearchTerm
+        SearchTerm = e.Value.ToString();
+
+        try
+        {
+            if (string.IsNullOrEmpty(SearchTerm))
+            {
+                companies = await http.GetFromJsonAsync<List<Company>>(api_url + "api/Company");
+            }
+            else
+            {
+                // Thực hiện tìm kiếm với điều kiện phù hợp
+                companies = (await http.GetFromJsonAsync<List<Company>>($"https://localhost:7280/api/Company/Search?keyword={Uri.EscapeDataString(SearchTerm)}")) ?? null;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.ToString());
+        }
+    }
+
+    private void NavigateToDetails(int id)
+    {
+        NavManager.NavigateTo($"/companydetail?id={id}");
+    }
+
+}

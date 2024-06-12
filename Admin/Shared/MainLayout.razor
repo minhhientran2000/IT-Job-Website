@@ -1,0 +1,239 @@
+﻿@inherits LayoutComponentBase
+@inject NavigationManager NavManager
+@using System.Net.Http;
+@using System.Net.Http.Json;
+@using Api.Models 
+@using Newtonsoft.Json;
+@inject IJSRuntime JSRuntime
+
+
+@if (IsAdminLoggedIn == false )   
+{  
+    <div class="content-wrapper d-flex align-items-center auth px-0">
+        <div class="row w-100 mx-0">
+            <div class="col-lg-4 mx-auto">
+                <div class="auth-form-light text-left py-5 px-4 px-sm-5">
+                    <h4>Hello! let's get started</h4>
+                    <h6 class="font-weight-light">Sign in to continue.</h6>
+                    <EditForm Model="@loginModel" OnValidSubmit="Login">
+                        <DataAnnotationsValidator />
+
+                        <div class="form-group">
+                            <input id="inputLogin" type="email" @bind-value="loginModel.Email" class="form-control form-control-lg" placeholder="Email">
+                            <ValidationMessage For="@(() => loginModel.Email)" />
+                        </div>
+                        <div class="form-group">
+                            <input id="inputPassword" type="password" @bind-value="loginModel.Password" class="form-control form-control-lg" placeholder="Password">
+                            <ValidationMessage For="@(() => loginModel.Password)" />
+                        </div>
+                        <div class="mt-3">
+                            <button @onclick="Login" class="btn btn-block btn-primary btn-lg font-weight-medium auth-form-btn" type="submit">
+                                <span class="@_spinnerClass" role="status" aria-hidden="true"></span>
+                                SIGN IN
+                            </button>
+                        </div>
+                       @* <div class="text-center mt-4 font-weight-light">
+                            Don't have an account? <a href="#" class="text-primary">Create</a>
+                        </div>*@
+                        @*<div class="mt-3">
+                    <span>@alertMessage</span>
+                    </div>*@
+
+                    </EditForm>
+                    @if (!string.IsNullOrEmpty(alertMessage))
+                    {
+                        <div class="alert alert-danger" role="alert">@alertMessage</div>
+                    }
+
+                </div>
+
+
+            </div>
+        </div>
+    </div>
+}
+else if (IsAdminLoggedIn)
+{
+
+        <nav class="navbar col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
+            <div class="navbar-brand-wrapper d-flex justify-content-center">
+                <div class="navbar-brand-inner-wrapper d-flex justify-content-between align-items-center w-100">
+                    <a class="navbar-brand brand-logo" href="#"><img src="../assets/images/logo.svg" alt="logo" /></a>
+                    <a class="navbar-brand brand-logo-mini" href="#"><img src="../assets/images/logo-mini.svg" alt="logo" /></a>
+                    <button class="navbar-toggler navbar-toggler align-self-center" type="button" data-toggle="minimize">
+                        <span class="typcn typcn-th-menu"></span>
+                    </button>
+                </div>
+            </div>
+            <div class="navbar-menu-wrapper d-flex align-items-center justify-content-end">
+                <ul class="navbar-nav mr-lg-2">
+                    <li class="nav-item nav-profile dropdown">
+                        <a class="nav-link" href="#" data-toggle="dropdown" id="profileDropdown">
+                            <img src="../assets/images/faces/face5.jpg" alt="profile" />
+                            <span class="nav-profile-name">Admin</span>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="profileDropdown">
+                            @*<a class="dropdown-item">
+                    <i class="typcn typcn-cog-outline text-primary"></i>
+                    Settings
+                    </a>*@
+                        <a @onclick="Logout" href="#" class="dropdown-item">
+                                <i class="typcn typcn-eject text-primary"></i>
+                                Logout
+                            </a>
+                        </div>
+                    </li>
+                    @*<li class="nav-item nav-user-status dropdown">
+            <p class="mb-0">Last login was 23 hours ago.</p>
+            </li>*@
+                </ul>
+
+                <button class="navbar-toggler navbar-toggler-right d-lg-none align-self-center" type="button" data-toggle="offcanvas">
+                    <span class="typcn typcn-th-menu"></span>
+                </button>
+            </div>
+        </nav>
+        <!-- partial -->
+
+        <div class="container-fluid page-body-wrapper">
+            <div class="theme-setting-wrapper">
+                <div id="settings-trigger"><i class="typcn typcn-cog-outline"></i></div>
+                <div id="theme-settings" class="settings-panel">
+                    <i class="settings-close typcn typcn-times"></i>
+                    <p class="settings-heading">SIDEBAR SKINS</p>
+                    <div class="sidebar-bg-options selected" id="sidebar-light-theme"><div class="img-ss rounded-circle bg-light border mr-3"></div>Light</div>
+                    <div class="sidebar-bg-options" id="sidebar-dark-theme"><div class="img-ss rounded-circle bg-dark border mr-3"></div>Dark</div>
+                    <p class="settings-heading mt-2">HEADER SKINS</p>
+                    <div class="color-tiles mx-0 px-4">
+                        <div class="tiles success"></div>
+                        <div class="tiles warning"></div>
+                        <div class="tiles danger"></div>
+                        <div class="tiles info"></div>
+                        <div class="tiles dark"></div>
+                        <div class="tiles default"></div>
+                    </div>
+                </div>
+            </div>
+
+
+            <nav class="sidebar sidebar-offcanvas" id="sidebar">
+                <ul class="nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">
+                        <i class="typcn typcn-mortar-board menu-icon"></i>
+                        <span class="menu-title">Home</span>
+                    </a>
+                </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/category">
+                            <i class="typcn typcn-mortar-board menu-icon"></i>
+                            <span class="menu-title">Category</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/company">
+                            <i class="typcn typcn-mortar-board menu-icon"></i>
+                            <span class="menu-title">Company</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/seeker">
+                            <i class="typcn typcn-mortar-board menu-icon"></i>
+                            <span class="menu-title">Seeker</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/job">
+                            <i class="typcn typcn-mortar-board menu-icon"></i>
+                            <span class="menu-title">Job List</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" @onclick="Logout" href="#">
+                            <i class="typcn typcn-device-desktop menu-icon"></i>
+                            <span class="menu-title">Logout</span>
+                            <div class="badge badge-danger">new</div>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <div class="main-panel">
+                <div class="content-wrapper">
+                    <div class="row">
+                        @Body
+                    </div>
+                </div>
+                <footer class="footer">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-sm-flex justify-content-center justify-content-sm-between">
+                                <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">Copyright © 2020 <a href="https://www.bootstrapdash.com/" class="text-muted" target="_blank">Bootstrapdash</a>. All rights reserved.</span>
+                                <span class="float-none float-sm-right d-block mt-1 mt-sm-0 text-center text-muted">Free <a href="https://www.bootstrapdash.com/" class="text-muted" target="_blank">Bootstrap dashboard</a> templates from Bootstrapdash.com</span>
+                            </div>
+                        </div>
+                    </div>
+                </footer>
+            </div>
+
+    </div>
+
+}
+      
+@code {
+    public bool IsAdminLoggedIn = false;    
+    public LoginModel loginModel = new LoginModel();
+    HttpClient http = new HttpClient();
+    private string _spinnerClass = "";
+    public string alertMessage;
+    private bool alertMessageShow = false;
+
+    private async Task Login()
+    {      
+        alertMessage = "Wait";
+        alertMessageShow = true;
+        await Task.Delay(500);      
+
+        var response = await http.PostAsJsonAsync("https://localhost:7280/api/Login/login", new { loginModel.Email, loginModel.Password });  
+        if (response.IsSuccessStatusCode)
+        {       
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var responseObject = JsonConvert.DeserializeObject<Dictionary<string, string>>(responseContent);
+            int userId = Convert.ToInt32(responseObject["UserTypeId"]);
+            if (userId == 1)
+            {
+                await InvokeAsync(() => StateHasChanged());
+                alertMessage = "Login Successful";
+                await Task.Delay(1000);
+                IsAdminLoggedIn = true;
+            }
+            else
+            {
+                await InvokeAsync(() => StateHasChanged());
+                alertMessage = "Invalid Email or Password";
+                await Task.Delay(1000);
+                alertMessageShow = false;
+                alertMessage = "";
+                loginModel.Password = "";
+            } 
+        }
+        else
+        {       
+            await InvokeAsync(() => StateHasChanged());
+            alertMessage = "Invalid Email or Password";    
+            await Task.Delay(1000);
+            alertMessageShow = false;
+            alertMessage = "";
+            loginModel.Password = "";
+
+        }
+    }
+    private async void Logout()
+    {       
+        alertMessage = "";
+        alertMessageShow = false;
+        IsAdminLoggedIn = false;
+        loginModel.Email = "";
+        loginModel.Password = "";
+    }
+   
+}

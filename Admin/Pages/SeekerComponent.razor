@@ -1,0 +1,120 @@
+﻿@page "/seeker"
+
+@using Api.Models
+
+@inject HttpClient HttpClient
+@using CurrieTechnologies.Razor.SweetAlert2
+@inject SweetAlertService Swal
+
+
+<div class="col-md-12">
+    <div class="card">
+        <div class="table-responsive pt-3">
+            <table class="table table-striped project-orders-table">
+                <thead>
+                    <tr>
+                        <th class="ml-5">Seeker ID</th>
+                        <th>Name</th>
+                        <th>Phone Number</th>
+                        <th>Photo</th>
+                        <th>Major</th>
+                        <th>UserId</th>
+                        <th>UserEmail</th>
+                    </tr>
+                </thead>
+                @if (seekers != null)
+                {
+                    <tbody>
+                        @foreach (var item in seekers)
+                        {
+                            <tr>
+                                <td>@item.SeekerId</td>
+                                <td>@item.Name</td>
+                                <td>@item.PhoneNumber</td>
+                                <td style="width: 80px;"><img src="@(item.Photo != null ? item.Photo : "../img_avatar.png")" /></td>
+                                <td>@item.Major</td>
+                                <td>@item.User?.UserId</td>
+                                <td>@item.User?.Email</td>
+
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <button @onclick="@(() => GetSeeker(item.SeekerId))" type="button" class="btn btn-success btn-sm btn-icon-text mr-3" data-toggle="modal" data-target="#exampleModal">
+                                            Detail
+                                            <i class="typcn typcn-edit btn-icon-append"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                }
+            </table>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Company Detail</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@getSeeker">
+                    <DataAnnotationsValidator />
+                    <div class="form-group">
+                        <label>Name :</label>
+                        <input type="text" @bind-value="getSeeker.Name" class="form-control" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number :</label>
+                        <input type="text" @bind-value="getSeeker.PhoneNumber" class="form-control" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>File CV :</label>
+                        <input type="text" @bind-value="getSeeker.FileCV" class="form-control" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>Photo :</label>
+                        <input type="text" @bind-value="getSeeker.Photo" class="form-control" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>GPA :</label>
+                        <input type="text" @bind-value="getSeeker.GPA" class="form-control" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>Major :</label>
+                        <input type="text" @bind-value="getSeeker.Major" class="form-control" disabled>
+                    </div>
+
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+@code {
+    private List<Seeker> seekers = new List<Seeker>();
+
+    private Seeker getSeeker = new Seeker();
+
+
+    string api_url = "https://localhost:7280/";
+
+    protected override async Task OnInitializedAsync()
+    {
+        seekers = await HttpClient.GetFromJsonAsync<List<Seeker>>(api_url + "api/Seeker");
+    }
+
+    void GetSeeker(int id)
+    {
+        getSeeker = seekers.FirstOrDefault(x => x.SeekerId == id);
+    }
+}

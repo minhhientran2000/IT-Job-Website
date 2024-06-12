@@ -1,0 +1,420 @@
+﻿@page "/details"
+@inject NavigationManager NavManager
+@inject IHttpContextAccessor HttpAccessor
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+
+@using CurrieTechnologies.Razor.SweetAlert2
+@inject SweetAlertService Swal
+
+@using Api.Models
+
+<style>
+    .loading {
+        /* Định dạng cho loading */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+    }
+
+    .loading-text {
+        /* Định dạng cho văn bản trong loading */
+        font-size: 24px;
+        font-weight: bold;
+    }
+</style>
+
+@if (isLoading)
+{
+    <div class="loading">
+        <div class="loading-text">Đang tải...</div>
+        <!-- Bạn có thể thêm biểu tượng loading ở đây nếu cần -->
+    </div>
+}
+else
+{
+
+
+<!-- Hero Area Start-->
+<div class="slider-area ">
+    <div class="single-slider section-overly slider-height2 d-flex align-items-center" style="background-image: url('@ImageUrl')">
+        <div class="container">
+            <div class="row">
+                <div class="col-xl-12">
+                    <div class="hero-cap text-center">
+                        <h2>Thông tin công việc</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Hero Area End -->
+
+
+<div class="job-post-company pt-120 pb-120">
+    <div class="container">
+        <div class="row justify-content-between">
+            <!-- Left Content -->
+             @if (job != null)
+            {
+                <div class="col-xl-7 col-lg-8">
+
+                    <!-- job single -->
+                    <div class="single-job-items mb-50">
+                        <div class="job-items">
+                            <div class="company-img company-img-details">
+                                @if (job.Company != null)
+                                {
+                                    <a href="#"><img src="@job.Company.CompanyPhoto" height="85px" width="85px" alt=""></a>
+                                }
+                                else
+                                {
+                                    <a href="#"><img src="" height="85px" width="85px" alt=""></a>
+                                }
+                            </div>
+                            <div class="job-tittle">
+                                <a href="#">
+                                    <h4 style="overflow-wrap: break-word;">@job.JobTitle</h4>
+                                </a>
+                                <ul>
+                                   
+                                    <li>Địa điểm:  @job.JobLocation</li>
+                                    
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- job single End -->
+                
+                <div class="job-post-details">
+                    <div class="post-details2 mb-50">
+                        <!-- Small Section Tittle -->
+                        <div class="small-section-tittle">
+                            <h4>Mô tả công việc</h4>
+                        </div>
+                                <ul>
+                                    @foreach (var sentence in GetSentences(job.JobDescription))
+                                    {
+                                        <li>@sentence</li>
+                                    }
+                                </ul>
+                    </div>
+                            <div class="post-details2 mb-50">
+                                <!-- Small Section Tittle -->
+                                <div class="small-section-tittle">
+                                    <h4>Yêu cầu công việc</h4>
+                                </div>
+                                <ul>
+                                    @foreach (var sentence in GetSentences(job.JobRequirement))
+                                    {
+                                        <li>@sentence</li>
+                                    }
+                                </ul>
+                            </div>
+                    @*<div class="post-details2  mb-50">
+                        <!-- Small Section Tittle -->
+                        <div class="small-section-tittle">
+                            <h4>Required Knowledge, Skills, and Abilities</h4>
+                        </div>
+                        <ul>
+                            <li>System Software Development</li>
+                            <li>Mobile Applicationin iOS/Android/Tizen or other platform</li>
+                            <li>Research and code , libraries, APIs and frameworks</li>
+                            <li>Strong knowledge on software development life cycle</li>
+                            <li>Strong problem solving and debugging skills</li>
+                        </ul>
+                    </div>
+                    <div class="post-details2  mb-50">
+                        <!-- Small Section Tittle -->
+                        <div class="small-section-tittle">
+                            <h4>Education + Experience</h4>
+                        </div>
+                        <ul>
+                            <li>3 or more years of professional design experience</li>
+                            <li>Direct response email experience</li>
+                            <li>Ecommerce website design experience</li>
+                            <li>Familiarity with mobile and web apps preferred</li>
+                            <li>Experience using Invision a plus</li>
+                        </ul>
+                    </div>*@
+                </div>
+
+            </div>
+            }
+            @if (job != null)
+            {
+                <!-- Right Content -->
+                <div class="col-xl-4 col-lg-4">
+                    <div class="post-details3  mb-50">
+                    <!-- Small Section Tittle -->
+                    <div class="small-section-tittle">
+                        <h4>Thông tin chung</h4>
+                    </div>
+                    <ul>
+                        <li>Ngày tạo : <span>@job.CreatedDate.ToShortDateString()</span></li>
+                                @if(job.Location != null)
+                                {
+                                    <li>Tỉnh thành : <span>@job.Location.Name</span></li>
+                                }
+                                
+                            @if (job.Lev != null)
+                            {
+                                <li>Level : <span>@job.Lev.LevelName</span></li>
+                            }
+                        @if(job.Type != null)
+                        {
+                            <li>Đặc thù công việc : <span>@job.Type.TypeName</span></li>
+                        }                           
+                        <li>Mức lương :  <span>$ @job.SalaryRange</span></li>
+                        <li>Ngày hêt hạn : <span>@job.ExpiredDate.ToShortDateString()</span></li>
+                    </ul>
+                        @if(type == 0)
+                        { 
+                            <div class="apply-btn2">
+                                <a href="/login" class="btn">Đăng nhập để ứng tuyển</a>
+                            </div>
+                        }
+                        else if (type != 0 && type == 3)
+                        {
+                            <div class="apply-btn2">
+                                <a href="/joblist" class="btn">Quay lại danh sách</a>
+                            </div>
+                        }
+                        else 
+                        {
+                            <div class="apply-btn2">
+                                @if (status != "" && job.ExpiredDate < DateTime.Now)
+                                {
+                                    <a href="" class="btn ">Hết thời gian ứng tuyển</a>
+                                }
+                                else if (status != "" && job.ExpiredDate >= DateTime.Now)
+                                {
+                                    <a href="" class="btn">Trạng thái: @status</a>
+                                }
+                                else
+                                {
+                                    <a href="#" data-toggle="modal" data-target=".bd-example-modal-lg" class="btn">Ứng tuyển ngay</a>
+                                }
+                                @*<a href="#" @onclick="@(async () => await Confirm(userId))" class="btn">Apply Now</a>*@
+                               
+                            </div>
+                        }
+                    </div>
+                <div class="post-details4  mb-50">
+                    <!-- Small Section Tittle -->
+                    <div class="small-section-tittle">
+                        <h4>Thông tin công ty</h4>
+                    </div>
+                    <span>Mô tả công ty</span>
+                        @if(job.Company != null)
+                        {
+                        <p>@job.Company.CompanyDescription</p>
+                        <ul>
+                            <li>Tên công ty: <span>@job.Company.CompanyName </span></li>
+                            <li>Web : <span>@job.Company.CompanyWebsiteUrl</span></li>
+                            <li>Email: <span>@job.Company.CompanyEmail</span></li>
+                            <li style="display: flex;">Địa chỉ: <span style="overflow-wrap: break-word;">@job.Company.CompanyAddress</span></li>
+                        </ul>
+                        }
+                </div>
+            </div>
+            }
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Edit Seeker Information</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@comp" OnValidSubmit="Confirm">
+                    <DataAnnotationsValidator />
+                    <div class="form-group">
+                        <label>Name :</label>
+                        <input disabled type="text" @bind-value="comp.Name" class="form-control">
+                        <ValidationMessage For="@(() => comp.Name)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number :</label>
+                        <input disabled type="text" @bind-value="comp.PhoneNumber" class="form-control">
+                        <ValidationMessage For="@(() => comp.PhoneNumber)" />
+                    </div>
+                    <div class="form-group">
+                        <label>GPA :</label>
+                        <input disabled type="number" @bind-value="comp.GPA" class="form-control">
+                        <ValidationMessage For="@(() => comp.GPA)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Major :</label>
+                        <input disabled type="text" @bind-value="comp.Major" class="form-control">
+                        <ValidationMessage For="@(() => comp.Major)" />
+                    </div>
+                        <div class="form-group">
+                            <label>Address :</label>
+                            <input disabled type="text" @bind-value="comp.SeekerAddress" class="form-control">
+                            <ValidationMessage For="@(() => comp.SeekerAddress)" />
+                        </div>
+                    <div class="form-group">
+                        <label>Introducing Letter :</label>
+                        <input required type="text" @bind-value="newApplication.IntroducingLetter" class="form-control">
+                        <ValidationMessage For="@(() => newApplication.IntroducingLetter)" />
+                    </div>
+
+
+                    <div class="form-group">
+                        <label>File CV :</label>
+
+                        @if (comp.FileCV != null)
+                        {
+                            <input type="text" name="last_name" placeholder="@comp.FileCV" disabled
+                                   class="single-input">
+                            @*<button @onclick="DownloadFile">Download File</button>*@
+
+                           @* <object data="@comp.FileCV" type="application/pdf" width="100%" height="400px">
+                                <embed src="@comp.FileCV" type="application/pdf" />
+                            </object>*@
+                        }
+                        else
+                        {
+                            <input type="text" name="last_name" placeholder="Khong co CV" disabled
+                                   class="single-input">
+                        }                     
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Apply</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+}
+
+
+
+@code {
+    private string id;
+    private int type = 0;
+    private int userId = 0;
+    public int compId = 0;
+    public string status = "";
+    
+
+    private bool isLoading = true;
+
+    private string ImageUrl = "assets/img/hero/about.jpg";
+    HttpClient http = new HttpClient();
+
+    public JobList job = new JobList();
+    public Application application = new Application();
+    public ApplicationItem newApplication = new ApplicationItem();
+    private Seeker comp = new Seeker();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        userId = await sessionStorage.GetItemAsync<int>("ID");
+        type = await sessionStorage.GetItemAsync<int>("Type");
+        compId = await sessionStorage.GetItemAsync<int>("seekerId");
+        StateHasChanged();
+    }
+
+    protected override void OnInitialized()
+    {
+        var uri = new Uri(NavManager.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        id = query["id"];
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    { 
+        isLoading = true;
+        await Task.Delay(100);
+        //userId = await sessionStorage.GetItemAsync<int>("ID");
+        //type = await sessionStorage.GetItemAsync<int>("Type");
+        job = await http.GetFromJsonAsync<JobList>($"https://localhost:7280/api/JobList/{id}");
+        try
+        {
+            isLoading = false;
+            application = await http.GetFromJsonAsync<Application>($"https://localhost:7280/api/Application/GetByUserId/{id}?id2={userId}");
+            if (application != null)
+            {              
+                status = application.Status.StatusName;
+            }          
+        }
+        catch (Exception e)
+        {           
+            status = "";
+        }
+
+        //compId = await sessionStorage.GetItemAsync<int>("seekerId");
+        if (compId != 0)
+        {
+            comp = await http.GetFromJsonAsync<Seeker>($"https://localhost:7280/api/Seeker/{compId}");
+        }
+
+    }
+
+    IEnumerable<string> GetSentences(string text)
+    {
+        // Tách đoạn văn thành các câu dựa trên dấu chấm, dấu chấm hỏi, dấu chấm than, hoặc dấu chấm phẩy
+        string[] sentences = text.Split(new[] { '.', '?', '!' }, StringSplitOptions.RemoveEmptyEntries);
+
+        // Trả về danh sách các câu
+        return sentences;
+    }
+    async Task Confirm()
+    {
+        var confirmationResult = await Swal.FireAsync(
+            new SweetAlertOptions
+                {
+                    Title = "Bạn có chắc không?",
+                    Text = "Bạn không thể hoàn tác được hành động này!",
+                    Icon = SweetAlertIcon.Warning,
+                    ShowCancelButton = true,
+                    ConfirmButtonText = "Đồng ý!",
+                    CancelButtonText = "Quay lại!"
+                }
+        );
+
+        if (confirmationResult.IsConfirmed)
+        {
+            await Apply();
+        }
+    }
+    async Task Apply()
+    {
+        newApplication.UserId = userId;
+        newApplication.JobId = Convert.ToInt32(id);
+        newApplication.StatusId = 1;
+        
+        var response = await http.PostAsJsonAsync("https://localhost:7280/api/Application", newApplication);
+        if (response.IsSuccessStatusCode)
+        {
+            //await OnInitializedAsync();
+            application = await http.GetFromJsonAsync<Application>($"https://localhost:7280/api/Application/GetByUserId/{id}?id2={userId}");
+            if (application != null)
+            {
+                status = application.Status.StatusName;
+            }
+
+            newApplication = new ApplicationItem();
+            await Swal.FireAsync("Thành công!", "Ứng tuyển thành công!", SweetAlertIcon.Success);
+        }
+        else
+        {
+            await Swal.FireAsync("Thất bại!", "Ứng tuyển thất bại!", SweetAlertIcon.Error);
+        }
+
+    }
+}

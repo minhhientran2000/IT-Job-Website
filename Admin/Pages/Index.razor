@@ -1,0 +1,147 @@
+﻿@page "/"
+@using Admin.Data
+@using Api.Controllers
+@using Api.Models
+@inject HttpClient HttpClient
+@inject IJSRuntime JSRuntime
+
+
+<div class="col-xl-6 grid-margin stretch-card flex-column">
+    <h5 class="mb-2 text-titlecase mb-4">Thống kê tài khoản người tìm việc và công ty</h5>
+    <div class="row h-100">
+        <div class="col-md-12 stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start flex-wrap">
+                        <div>
+                            <p class="mb-3">Thống kê tài khoản</p>
+                            <h3>@sum</h3>
+                        </div>
+                        <div id="income-chart-legend" class="d-flex flex-wrap mt-1 mt-md-0">
+                            <div class="d-flex align-items-center mr-3">
+                                <div class="mr-2" style="width: 12px; border-radius: 50%; height: 12px; background-color: #a43cda ">
+                                </div><p class="mb-0">Người tìm việc: @seeker_num</p></div>
+                                <div class="d-flex align-items-center">
+                                    <div class="mr-2" style="width: 12px; border-radius: 50%; height: 12px; background-color: #00c8bf ">
+                                    </div><p class="mb-0">Công ty: @comp_num </p></div></div>
+                    </div>
+                    <div id="chartdiv"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="col-xl-6 grid-margin stretch-card flex-column">
+    <h5 class="mb-2 text-titlecase mb-4">So sánh số lượng tài khoản đăng ký tháng này và tháng trước</h5>
+    <div class="row h-100">
+        <div class="col-md-12 stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start flex-wrap">
+                        <div>
+                            <p class="mb-3">Thống kê số liệu</p>
+                        </div>
+                        <div id="income-chart-legend" class="d-flex flex-wrap mt-1 mt-md-0">
+                            <div class="d-flex align-items-center mr-3">
+                                <div class="mr-2" style="width: 12px; border-radius: 50%; height: 12px; background-color: #a43cda ">
+                                </div><p class="mb-0">@changeStatus: @percentChange % so với tháng trước</p>
+                            </div>
+                            
+                        </div>
+                    </div>
+                    <div id="staticgraphdiv"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="col-xl-12 grid-margin stretch-card flex-column">
+    <h5 class="mb-2 text-titlecase mb-4">Thống kê tài khoản đăng ký theo tháng</h5>
+    <div class="row h-100">
+        <div class="col-md-12 stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <div id="graphdiv"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@*<div id="graphdiv"></div>*@
+<div id="staticgraphdiv"></div>
+
+
+@code{
+    private int seeker_num = 0;
+    private int comp_num = 0;
+    private int sum = 0;
+    string api_url = "https://localhost:7280/";
+    private double percentChange;
+    private string changeStatus;
+
+
+    private List<UserRegistrationStats> stats;
+    private List<ChartData> chartData = new List<ChartData>();
+    private List<Seeker> seekers = new List<Seeker>();
+    private List<Company> companies = new List<Company>();
+    private CompareUserResult data;
+
+    private async Task GeneratePieChart()
+    {
+        await JSRuntime.InvokeVoidAsync("GenerateChart", chartData);
+    }
+    private async Task GenerateGraph()
+    {
+        stats = await HttpClient.GetFromJsonAsync<List<UserRegistrationStats>>("https://localhost:7280/api/User/registration-stats");
+        await JSRuntime.InvokeVoidAsync("GenerateHistogram", stats);
+    }
+    private async Task GenerateStaticGraph()
+    {
+
+        await JSRuntime.InvokeVoidAsync("GenerateStaticUserHistogram", data);
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await GeneratePieChart();
+        await GenerateGraph();
+        await GenerateStaticGraph();
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        companies = await HttpClient.GetFromJsonAsync<List<Company>>(api_url + "api/Company");
+        seekers = await HttpClient.GetFromJsonAsync<List<Seeker>>(api_url + "api/Seeker");
+        if(companies.Count() > 0)
+        {
+            comp_num = companies.Count();
+        }
+        if (seekers.Count() > 0)
+        {
+            seeker_num = seekers.Count();
+        }
+        sum = seeker_num + comp_num;
+        chartData.Add(new ChartData { Name = "Người tìm việc", Percent = (seeker_num * 100.0) / sum });
+        chartData.Add(new ChartData { Name = "Công ty", Percent = (comp_num * 100.0) / sum });
+        data = await HttpClient.GetFromJsonAsync<CompareUserResult>("https://localhost:7280/api/User/compare");
+        if (data != null)
+        {
+            percentChange = data.PercentChange;
+            changeStatus = data.ChangeStatus;
+        }
+    }
+    public class ChartData
+    {
+        public string Name { get; set; }
+        public double Percent { get; set; }
+    }
+    public class CompareUserResult
+    {
+        public int ThisMonth { get; set; }
+        public int LastMonth { get; set; }
+        public double PercentChange { get; set; } 
+        public string ChangeStatus { get; set; } 
+    }
+}
+
+    

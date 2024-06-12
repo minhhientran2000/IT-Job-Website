@@ -1,0 +1,998 @@
+﻿@page "/chat"
+
+@inject IHttpContextAccessor HttpAccessor
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@using Microsoft.AspNetCore.SignalR.Client;
+@using Api.Models.Chat
+@using Api.Models
+@using Newtonsoft.Json;
+@inject HttpClient Http
+@inject NavigationManager NavManager
+@inject IWebHostEnvironment env
+@using CurrieTechnologies.Razor.SweetAlert2
+@inject SweetAlertService Swal
+
+<style>
+    .loading {
+        /* Định dạng cho loading */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+    }
+
+    .loading-text {
+        /* Định dạng cho văn bản trong loading */
+        font-size: 24px;
+        font-weight: bold;
+    }
+
+
+
+
+    body {
+        background-color: #f4f7f6;
+        margin-top: 20px;
+    }
+
+    .card {
+        background: #fff;
+        transition: .5s;
+        border: 0;
+        margin-bottom: 30px;
+        border-radius: .55rem;
+        position: relative;
+        width: 100%;
+        box-shadow: 0 1px 2px 0 rgb(0 0 0 / 10%);
+    }
+
+    .chat-app .people-list {
+        width: 280px;
+        position: absolute;
+        left: 0;
+        top: 0;
+        padding: 20px;
+        z-index: 7
+    }
+
+    .chat-app .chat {
+        margin-left: 280px;
+        border-left: 1px solid #eaeaea
+    }
+
+    .people-list {
+        -moz-transition: .5s;
+        -o-transition: .5s;
+        -webkit-transition: .5s;
+        transition: .5s
+    }
+
+        .people-list .chat-list li {
+            padding: 10px 15px;
+            list-style: none;
+            border-radius: 3px
+        }
+
+            .people-list .chat-list li:hover {
+                background: #efefef;
+                cursor: pointer
+            }
+
+            .people-list .chat-list li.active {
+                background: #efefef
+            }
+
+            .people-list .chat-list li .name {
+                font-size: 15px
+            }
+
+        .people-list .chat-list img {
+            width: 45px;
+            border-radius: 50%
+        }
+
+        .people-list img {
+            float: left;
+            border-radius: 50%
+        }
+
+        .people-list .about {
+            float: left;
+            padding-left: 8px
+        }
+
+        .people-list .status {
+            color: #999;
+            font-size: 13px
+        }
+
+    .chat .chat-header {
+        padding: 15px 20px;
+        border-bottom: 2px solid #f4f7f6
+    }
+
+        .chat .chat-header img {
+            float: left;
+            border-radius: 40px;
+            width: 40px
+        }
+
+        .chat .chat-header .chat-about {
+            float: left;
+            padding-left: 10px
+        }
+
+    .chat .chat-history {
+        padding: 20px;
+        border-bottom: 2px solid #fff
+    }
+
+        .chat .chat-history ul {
+            padding: 0
+        }
+
+            .chat .chat-history ul li {
+                list-style: none;
+                margin-bottom: 30px
+            }
+
+                .chat .chat-history ul li:last-child {
+                    margin-bottom: 0px
+                }
+
+        .chat .chat-history .message-data {
+            margin-bottom: 15px
+        }
+
+            .chat .chat-history .message-data img {
+                border-radius: 40px;
+                width: 40px
+            }
+
+        .chat .chat-history .message-data-time {
+            color: #434651;
+            padding-left: 6px
+        }
+
+        .chat .chat-history .message {
+            color: #444;
+            padding: 18px 20px;
+            line-height: 26px;
+            font-size: 16px;
+            border-radius: 7px;
+            display: inline-block;
+            position: relative
+        }
+
+            .chat .chat-history .message:after {
+                bottom: 100%;
+                left: 7%;
+                border: solid transparent;
+                content: " ";
+                height: 0;
+                width: 0;
+                position: absolute;
+                pointer-events: none;
+                border-bottom-color: #fff;
+                border-width: 10px;
+                margin-left: -10px
+            }
+
+        .chat .chat-history .my-message {
+            background: #efefef
+        }
+
+            .chat .chat-history .my-message:after {
+                bottom: 100%;
+                left: 30px;
+                border: solid transparent;
+                content: " ";
+                height: 0;
+                width: 0;
+                position: absolute;
+                pointer-events: none;
+                border-bottom-color: #efefef;
+                border-width: 10px;
+                margin-left: -10px
+            }
+
+        .chat .chat-history .other-message {
+            background: #e8f1f3;
+            text-align: right
+        }
+
+            .chat .chat-history .other-message:after {
+                border-bottom-color: #e8f1f3;
+                left: 93%
+            }
+
+    .chat .chat-message {
+        padding: 20px
+    }
+
+    .online,
+    .offline,
+    .me {
+        margin-right: 2px;
+        font-size: 8px;
+        vertical-align: middle
+    }
+
+    .online {
+        color: #86c541
+    }
+
+    .offline {
+        color: #e47297
+    }
+
+    .me {
+        color: #1d8ecd
+    }
+
+    .float-right {
+        float: right
+    }
+
+    .clearfix:after {
+        visibility: hidden;
+        display: block;
+        font-size: 0;
+        content: " ";
+        clear: both;
+        height: 0
+    }
+
+</style>
+
+@if (isLoading)
+{
+    <div class="loading">
+        <div class="loading-text">Đang tải...</div>
+        <!-- Bạn có thể thêm biểu tượng loading ở đây nếu cần -->
+    </div>
+}
+else
+{
+    if(type == 2)
+    {
+        <div class="container">
+            <div class="d-none d-sm-block mb-5 pb-4">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="form-group mt-3">
+                            <button data-toggle="modal" data-target="#exampleModal" class="btn btn-primary">Tạo cuộc trò chuyện mới</button>
+                        </div>
+
+
+                        @if (groupChats.Count > 0)
+                        {
+                            <div class="container">
+                                <div class="row clearfix">
+                                    <div class="col-lg-12">
+                                        <div class="card chat-app" style="padding-bottom: 30px;">
+                                            <div id="plist" class="people-list" style="height: 300px;overflow: auto">
+                                                <div class="input-group">
+                                                    <div class="input-group-prepend">
+                                                        <span class="input-group-text"><i class="fa fa-search"></i></span>
+                                                    </div>
+                                                    <input type="text" class="form-control" placeholder="Search...">
+                                                </div>
+                                                <ul  class="list-unstyled chat-list mt-2 mb-0">
+                                                    @foreach (var message in groupChats)
+                                                    {
+                                                        <li class="clearfix">
+                                                            <img src="../assets/img_avatar.png" alt="avatar">
+                                                            <div class="about">
+                                                                <div class="name"><a @onclick="@(() => GetGroupId(message.GroupId))">@message.GroupName</a></div>
+                                                                <div class="status"> <i class="fa fa-circle online"></i> online </div>
+                                                            </div>
+                                                        </li>
+                                                    }
+                                                </ul>
+                                            </div>
+                                            <div class="chat">
+                                                <div class="chat-header clearfix">
+                                                    <div class="row">
+                                                       
+                                                            <div class="col-lg-6">
+                                                                <a href="">
+                                                                <img src="@(companyItem.CompanyPhoto != null ? companyItem.CompanyPhoto : "../assets/img_avatar.png")" alt="avatar">
+                                                                </a>
+                                                            
+                                                                <div class="chat-about">
+                                                                    <h6 class="m-b-0">@(companyItem.CompanyName != null ? companyItem.CompanyName : "Chọn một hội thoại")</h6>
+                                                                    
+                                                                </div>
+                                                            
+                                                            </div>
+                                                       
+                                                        @*<div class="col-lg-6 hidden-sm text-right">
+                                                            <a href="" class="btn btn-outline-secondary"><i class="fa fa-camera"></i></a>
+                                                        </div>*@
+                                                    </div>
+                                                </div>
+
+                                                <div class="chat-history" style=" height: 300px;overflow: auto">
+                                                    <ul class="m-b-0">
+                                                        @foreach (var message in _messages)
+                                                        {
+                                                            
+                                                            <li class="clearfix">
+                                                                <div class="message-data @(message.UserType != 2 ? "text-right" : "")">
+                                                                    <span class="message-data-time">@message.Time.ToString()</span>
+                                                                </div>
+                                                                @if (message.DataType == "text")
+                                                                {
+                                                                    <div class="message my-message @(message.UserType != 2 ? "float-right" : "")">@message.Content</div>
+                                                                }
+                                                                else if (message.DataType == "file")
+                                                                {
+                                                                    <div class="message my-message @(message.UserType != 2 ? "float-right" : "")">
+                                                                        <u>@message.FileName</u>
+                                                                        <br />
+                                                                        <a style="@(message.UserType != 2 ? "float-right" : "")" href="@message.FileLink" download><b>Nhấn để tải file</b></a>
+                                                                    </div>
+                                                                }
+                                                                else if (message.DataType == "text-file")
+                                                                {
+                                                                    <div class="message my-message @(message.UserType != 2 ? "float-right" : "")">@message.Content</div>
+                                                                    <div class="message my-message @(message.UserType != 2 ? "float-right" : "")">
+                                                                        <u>@message.FileName</u>
+                                                                        <br />
+                                                                        <a style="@(message.UserType != 2 ? "float-right" : "")" href="@message.FileLink" download><b>Nhấn để tải file</b></a>
+                                                                    </div>
+                                                                }
+                                                            </li>
+                                                            
+                                                        }
+                                                    </ul>
+                                                </div>   
+                                                @if(groupId != 0)
+                                                {
+                                                    <div class="chat-message clearfix">
+                                                        <div class="input-group mb-0">
+                                                            <div class="input-group-prepend">
+                                                                <span class="input-group-text"><a href="" @onclick="@(() => SendMessageAsyncSeeker())"><i>Gửi</i></a></span>
+                                                            </div>
+                                                            <input type="text" @bind="message" class="form-control" placeholder="Enter text here...">
+
+                                                            <button>
+                                                                <InputFile style="width: 100px;" OnChange="@HandleFileChange" />
+                                                            </button>
+
+                                                        </div>
+                                                        @if (!string.IsNullOrEmpty(fileName))
+                                                        {
+
+                                                            <p>File đã chọn: @fileName</p>
+                                                        }
+                                                    </div>
+                                                }
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        }
+                        else
+                        {
+                            <div class="container">
+                                <div class="row clearfix">
+                                    <div class="col-lg-12">
+                                        <div class="card chat-app">
+                                            <div id="plist" class="people-list">
+                                                <div class="input-group">
+                                                    <div class="input-group-prepend">
+                                                        <span class="input-group-text"><i class="fa fa-search"></i></span>
+                                                    </div>
+                                                    <input type="text" class="form-control" placeholder="Search...">
+                                                </div>
+                                                <ul class="list-unstyled chat-list mt-2 mb-0">
+                                                    <li class="clearfix">
+
+                                                        <div class="about">
+                                                            <div class="name"><a>Chưa có cuộc hội thoại nào</a></div>
+                                                            <div class="status"> <i class="fa fa-circle online"></i> online </div>
+                                                        </div>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                            <div class="chat">
+                                                <div class="chat-header clearfix">
+                                                    <div class="row">
+                                                        <div class="col-lg-6">
+
+                                                            <div class="chat-about">
+                                                                <h6 class="m-b-0">Chưa có cuộc hội thoại nào</h6>
+                                                                <small>@DateTime.UtcNow.ToShortDateString()</small>
+                                                            </div>
+                                                        </div>
+
+                                                    </div>
+                                                </div>
+
+                                                <div class="chat-history">
+                                                    <ul class="m-b-0">
+                                                        <li class="clearfix">
+                                                            <div class="message-data">
+                                                                <span class="message-data-time"></span>
+                                                            </div>
+
+                                                            <div class="message my-message"></div>
+
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        @*--------------------------Modal-------------------------------------------------------------------*@
+                        <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                            <div class="modal-dialog" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="exampleModalLabel">Tạo nhóm chat</h5>
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <form @onsubmit="AddGroupChat">
+                                            <div class="form-group">
+                                                <label for="compId">Company:</label>
+                                                <select class="form-control" id="compId" @bind="compId" required>
+                                                    <option value="">Lựa chọn công ty</option>
+                                                    @foreach (var company in companies)
+                                                    {
+                                                        <option value="@company.CompanyId">@company.CompanyName</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="groupName">Tên nhóm chat:</label>
+                                                <input type="text" class="form-control" id="groupName" @bind="groupName" required>
+                                            </div>
+                                            <button type="submit" class="btn btn-primary">Thêm</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else if (type == 3)
+    {
+        if (groupChats.Count > 0)
+        {
+            <div class="container">
+                <div class="row clearfix">
+                    <div class="col-lg-12">
+                        <div class="card chat-app" style="padding-bottom: 30px;">
+                            <div id="plist" class="people-list" style="height: 300px;overflow: auto">
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text"><i class="fa fa-search"></i></span>
+                                    </div>
+                                    <input type="text" class="form-control" placeholder="Search...">
+                                </div>
+                                <ul class="list-unstyled chat-list mt-2 mb-0">
+                                    @foreach (var message in groupChats)
+                                    {
+                                        <li class="clearfix">
+                                            <img src="../assets/img_avatar.png" alt="avatar">
+                                            <div class="about">
+                                                <div class="name"><a @onclick="@(() => GetGroupId(message.GroupId))">@message.GroupName</a></div>
+                                                <div class="status"> <i class="fa fa-circle online"></i> online </div>
+                                            </div>
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                            <div class="chat">
+                                <div class="chat-header clearfix">
+                                    <div class="row">
+                                        <div class="col-lg-6">
+                                            <a href="">
+                                                <img src="@(seekerItem.Photo != null ? seekerItem.Photo : "../assets/img_avatar.png")" alt="avatar">
+                                            </a>
+                                            <div class="chat-about">
+                                                <h6 class="m-b-0">@(seekerItem.Name != null ? seekerItem.Name : "Chọn một hội thoại")</h6>
+                                                <small><i class="fa fa-circle online"></i> online</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="chat-history" style=" height: 300px;overflow: auto">
+                                    <ul class="m-b-0">
+                                        @foreach (var message in _messages)
+                                        {
+
+                                            <li class="clearfix">
+                                                <div class="message-data @(message.UserType != 3 ? "text-right" : "")">
+                                                    <span class="message-data-time">@message.Time.ToString()</span>
+                                                </div>
+                                                @if (message.DataType == "text")
+                                                {
+                                                    <div class="message my-message @(message.UserType != 3 ? "float-right" : "")">@message.Content</div>
+                                                }
+                                                else if (message.DataType == "file")
+                                                {
+                                                    <div class="message my-message @(message.UserType != 3 ? "float-right" : "")">
+                                                        <u>@message.FileName</u>
+                                                        <br />
+                                                        <a href="@message.FileLink" download><b>Nhấn để tải file</b></a>
+                                                    </div>
+                                                }
+                                                else if (message.DataType == "text-file")
+                                                {
+                                                    <div class="message my-message @(message.UserType != 3 ? "float-right" : "")">@message.Content</div>
+                                                    <div class="message my-message @(message.UserType != 3 ? "float-right" : "")">
+                                                        <u>@message.FileName</u>
+                                                        <br />
+                                                        <a href="@message.FileLink" download><b>Nhấn để tải file</b></a>
+                                                    </div>
+                                                    
+                                                }
+                                            </li>
+
+                                        }
+                                    </ul>
+                                </div>
+                                @if (groupId != 0)
+                                {
+                                    <div class="chat-message clearfix">
+                                        <div class="input-group mb-0">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text"><a href="" @onclick="@(() => SendMessageAsyncCompany())"><i>Gửi</i></a></span>
+                                            </div>
+                                            <input type="text" @bind="message" class="form-control" placeholder="Enter text here...">
+                                             <button>
+                                                                <InputFile style="width: 100px;" OnChange="@HandleFileChange" />
+                                                            </button>
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(fileName))
+                                        {
+
+                                            <p>File đã chọn: @fileName</p>
+                                        }
+                                    </div>
+                                }
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        }
+        else
+        {
+            <div class="container">
+                <div class="row clearfix">
+                    <div class="col-lg-12">
+                        <div class="card chat-app">
+                            <div id="plist" class="people-list">
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text"><i class="fa fa-search"></i></span>
+                                    </div>
+                                    <input type="text" class="form-control" placeholder="Search...">
+                                </div>
+                                <ul class="list-unstyled chat-list mt-2 mb-0">
+                                    <li class="clearfix">
+                                        
+                                        <div class="about">
+                                            <div class="name"><a>Chưa có cuộc hội thoại nào</a></div>
+                                            <div class="status"> <i class="fa fa-circle online"></i> online </div>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="chat">
+                                <div class="chat-header clearfix">
+                                    <div class="row">
+                                        <div class="col-lg-6">
+                                            
+                                            <div class="chat-about">
+                                                <h6 class="m-b-0">Chưa có cuộc hội thoại nào</h6>
+                                                <small>@DateTime.UtcNow.ToShortDateString()</small>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+
+                                <div class="chat-history">
+                                    <ul class="m-b-0">
+                                        <li class="clearfix">
+                                            <div class="message-data">
+                                                <span class="message-data-time"></span>
+                                            </div>
+
+                                            <div class="message my-message"></div>
+
+                                        </li>    
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+}
+
+
+@code {
+    private HubConnection _hubConnection;
+
+    private List<Message> _messages = new List<Message>();
+    private List<GroupChat> groupChats = new List<GroupChat>();
+    private List<Company> companies = new List<Company>();
+    private GroupChat group = new GroupChat();
+    private Company companyItem = new Company();
+    private Seeker seekerItem = new Seeker();
+
+    private int type = 0;
+    private int groupId = 0;
+    private int seekerId = 0;
+    private int companyId = 0;
+    private string message = "";
+    private string notify = "";
+    private int compId = 0;
+    private string groupName = "";
+
+    private bool isLoading = true;
+
+    private IBrowserFile file;
+    private bool fileUploaded = false;
+    private string downloadLink;
+    private string fileName = "";
+
+    //private byte[] imageBytes;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        type = await sessionStorage.GetItemAsync<int>("Type");
+        StateHasChanged();
+    }
+
+    private async Task HandleFileChange(InputFileChangeEventArgs e)
+    {
+        file = e.File;
+        if (file != null)
+        {
+            // Reset download link
+            downloadLink = null;
+            fileUploaded = true;
+            fileName = file.Name;
+            //if (IsImage(file.Name))
+            //{
+            //    // Load the image
+            //    using (var memoryStream = new MemoryStream())
+            //    {
+            //        await file.OpenReadStream().CopyToAsync(memoryStream);
+            //        imageBytes = memoryStream.ToArray();
+            //    }
+            //}
+            // else
+            //{
+            //    // Reset imageBytes if the file is not an image
+            //    imageBytes = null;
+            //}
+        }
+
+    }
+    //private bool IsImage(string fileName)
+    //{
+    //    string[] imageExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".bmp" };
+    //    string extension = Path.GetExtension(fileName).ToLower();
+    //    return imageExtensions.Contains(extension);
+    //}
+
+    private async Task DownloadFile()
+    {
+        if (file != null)
+        {
+            var uploadsRootFolder = Path.Combine(env.WebRootPath, "uploads");
+            if (!Directory.Exists(uploadsRootFolder))
+            {
+                Directory.CreateDirectory(uploadsRootFolder);
+            }
+
+            // Ensure the filename is unique to avoid overwriting existing files
+            var uniqueFileName = Guid.NewGuid().ToString() + "_" + file.Name;
+            var filePath = Path.Combine(uploadsRootFolder, uniqueFileName);
+
+            using (var fileStream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.OpenReadStream().CopyToAsync(fileStream);
+            }
+
+            downloadLink = $"uploads/{uniqueFileName}";
+        }
+
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        await Task.Delay(200);
+        //type = await sessionStorage.GetItemAsync<int>("Type");
+        _hubConnection = new HubConnectionBuilder()
+                .WithUrl(NavManager.ToAbsoluteUri("/chathub"))
+                .Build();
+
+        _hubConnection.StartAsync();
+
+        _hubConnection.On<GroupChat>("ReceiveGroup", (newGroup) =>
+        {
+            if (newGroup != null)
+            {
+                groupChats.Add(newGroup);
+                StateHasChanged();
+            }
+        });
+
+        if (type == 2)
+        {
+            isLoading = false;
+            seekerId = await sessionStorage.GetItemAsync<int>("seekerId");
+            companies = await Http.GetFromJsonAsync<List<Company>>("https://localhost:7280/api/Company");
+            try
+            {
+                groupChats = await Http.GetFromJsonAsync<List<GroupChat>>($"https://localhost:7280/api/Message/GetGroupsBySeeker?seekerId={seekerId}");
+
+
+            }
+            catch(Exception ex)
+            {
+                //groupChats = null;
+            }
+            await GetMessageSeeker();
+
+            await LoadChatHistoryBySeeker(groupId, seekerId);
+
+        }
+        else if(type == 3)
+        {
+            isLoading = false;
+            companyId = await sessionStorage.GetItemAsync<int>("comId");
+            try
+            {
+                groupChats = await Http.GetFromJsonAsync<List<GroupChat>>($"https://localhost:7280/api/Message/GetGroupsByCompany?companyId={companyId}");
+
+
+
+            }
+            catch (Exception ex)
+            {
+                //groupChats = null;
+            }
+            await GetMessageCompany();
+
+            await LoadChatHistoryByCompany(groupId, companyId);
+        }
+
+
+
+    }
+
+
+
+    private async Task GetMessageSeeker()
+    {
+        _hubConnection = new HubConnectionBuilder()
+                .WithUrl(NavManager.ToAbsoluteUri("/chathub"))
+                .Build();
+
+        await _hubConnection.StartAsync();
+        await _hubConnection.InvokeAsync("JoinChatGroup", groupId);
+        _hubConnection.On<Message>("ReceiveMessage", (message) =>
+        {
+            _messages.Add(message);
+            StateHasChanged();
+        });
+    }
+
+    private async Task GetMessageCompany()
+    {
+        _hubConnection = new HubConnectionBuilder()
+               .WithUrl(NavManager.ToAbsoluteUri("/chathub"))
+               .Build();
+
+        await _hubConnection.StartAsync();
+        await _hubConnection.InvokeAsync("JoinChatGroup", groupId);
+        _hubConnection.On<Message>("ReceiveMessage", (message) =>
+        {
+            _messages.Add(message);
+            StateHasChanged();
+        });
+    }
+
+
+    private async Task GetGroupId(int id)
+    {
+        groupId = id;
+        group = await Http.GetFromJsonAsync<GroupChat>($"https://localhost:7280/api/Message/GetGroupsByGroupId?id={groupId}");
+
+        // Gọi JoinChatGroup để tham gia vào nhóm chat mới
+        await JoinChatGroup(groupId);
+       
+        // Gọi LoadChatHistoryBySeeker để tải lịch sử trò chuyện với groupId mới
+        if(type == 2)
+        {
+            companyItem = await Http.GetFromJsonAsync<Company>($"https://localhost:7280/api/Company/{group.CompanyId}");
+            await LoadChatHistoryBySeeker(groupId, seekerId);
+        }
+        else if(type == 3)
+        {
+            seekerItem = await Http.GetFromJsonAsync<Seeker>($"https://localhost:7280/api/Seeker/{group.SeekerId}");
+            await LoadChatHistoryByCompany(groupId, companyId);
+        }
+
+    }
+
+    private async Task JoinChatGroup(int groupId)
+    {
+        // Tham gia vào nhóm chat với groupId mới
+        await _hubConnection.InvokeAsync("JoinChatGroup", groupId);
+    }
+
+    //Send Message
+    private async Task SendMessageAsyncSeeker()
+    {
+        if (!string.IsNullOrWhiteSpace(message) && !fileUploaded)
+        {
+            var response = await Http.PostAsJsonAsync($"https://localhost:7280/api/Message?Content={message}&groupId={groupId}&dataType={"text"}&userType={type}", message);
+            if (response.IsSuccessStatusCode)
+            {
+                await _hubConnection.InvokeAsync("SendMessage", groupId, message, "text", 2, "", "");
+                // Message saved successfully
+                message = ""; // Clear the input field
+                              //await LoadChatHistoryBySeeker(groupId, seekerId);
+                StateHasChanged();
+            }
+        }
+        else if (fileUploaded && string.IsNullOrWhiteSpace(message))
+        {
+            await DownloadFile();
+            var response = await Http.PostAsJsonAsync($"https://localhost:7280/api/Message?&groupId={groupId}&dataType={"file"}&userType={type}&fileName={file.Name}&fileLink={downloadLink}", message);
+            if (response.IsSuccessStatusCode)
+            {               
+                await _hubConnection.InvokeAsync("SendMessage", groupId, "", "file", 2, file.Name, downloadLink);
+                downloadLink = "";
+                file = null;
+                fileUploaded = false;
+                fileName = "";
+            }
+        }
+        else if (fileUploaded && !string.IsNullOrWhiteSpace(message))
+        {
+            await DownloadFile();
+            var response = await Http.PostAsJsonAsync($"https://localhost:7280/api/Message?Content={message}&groupId={groupId}&dataType={"text-file"}&userType={type}&fileName={file.Name}&fileLink={downloadLink}", message);
+            if (response.IsSuccessStatusCode)
+            {
+                await _hubConnection.InvokeAsync("SendMessage", groupId, message, "text-file", 2, file.Name, downloadLink);
+                // Message saved successfully
+                message = ""; // Clear the input field
+                downloadLink = "";
+                fileUploaded = false;
+                file = null;   
+                fileName = "";
+                //await LoadChatHistoryBySeeker(groupId, seekerId);
+                StateHasChanged();
+            }
+        }      
+    }
+    private async Task SendMessageAsyncCompany()
+    {
+        if (!string.IsNullOrWhiteSpace(message) && !fileUploaded)
+        {
+            
+            var response = await Http.PostAsJsonAsync($"https://localhost:7280/api/Message?Content={message}&groupId={groupId}&dataType={"text"}&userType={type}", message);
+            if (response.IsSuccessStatusCode)
+            {
+                await _hubConnection.InvokeAsync("SendMessage", groupId, message, "text", 3, "", "");
+                // Message saved successfully
+                message = ""; // Clear the input field
+                //await LoadChatHistoryByCompany(groupId, companyId);
+                StateHasChanged();
+            }
+        }
+
+        else if (fileUploaded && string.IsNullOrWhiteSpace(message))
+        {
+            await DownloadFile();
+            var response = await Http.PostAsJsonAsync($"https://localhost:7280/api/Message?&groupId={groupId}&dataType={"file"}&userType={type}&fileName={file.Name}&fileLink={downloadLink}", message);
+            if (response.IsSuccessStatusCode)
+            {
+                await _hubConnection.InvokeAsync("SendMessage", groupId, "", "file", 3, file.Name, downloadLink);
+                downloadLink = "";
+                file = null;
+                fileUploaded = false;
+                fileName = "";
+            }
+        }
+        else if (fileUploaded && !string.IsNullOrWhiteSpace(message))
+        {
+            await DownloadFile();
+            var response = await Http.PostAsJsonAsync($"https://localhost:7280/api/Message?Content={message}&groupId={groupId}&dataType={"text-file"}&userType={type}&fileName={file.Name}&fileLink={downloadLink}", message);
+            if (response.IsSuccessStatusCode)
+            {
+                await _hubConnection.InvokeAsync("SendMessage", groupId, message, "text-file", 3, file.Name, downloadLink);
+                // Message saved successfully
+                message = ""; // Clear the input field
+                downloadLink = "";
+                fileUploaded = false;
+                file = null;
+                fileName = "";
+                //await LoadChatHistoryBySeeker(groupId, seekerId);
+                StateHasChanged();
+            }
+        }
+
+    }
+
+
+
+    //History chat
+    private async Task LoadChatHistoryBySeeker(int groupId, int seekerId)
+    {
+        var response = await Http.GetAsync($"https://localhost:7280/api/Message/GetChatHistoryBySeeker?groupId={groupId}&seekerId={seekerId}");
+        if (response.IsSuccessStatusCode)
+        {
+            _messages = await response.Content.ReadFromJsonAsync<List<Message>>();
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadChatHistoryByCompany(int groupId, int companyId)
+    {
+        var response = await Http.GetAsync($"https://localhost:7280/api/Message/GetChatHistoryByCompany?groupId={groupId}&companyId={companyId}");
+        if (response.IsSuccessStatusCode)
+        {
+            _messages = await response.Content.ReadFromJsonAsync<List<Message>>();
+            StateHasChanged();
+        }
+    }
+
+    //Add 
+    private async Task AddGroupChat()
+    {
+        var response = await Http.PostAsJsonAsync($"https://localhost:7280/api/Message/AddGroupChat?seekerId={seekerId}&companyId={compId}&groupName={groupName}", seekerId);
+        if (response.IsSuccessStatusCode)
+        {
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var responseObject = JsonConvert.DeserializeObject<Dictionary<string, string>>(responseContent);
+            int groupId2 = Convert.ToInt32(responseObject["GroupId"]);
+            await _hubConnection.InvokeAsync("AddGroupChat", groupId2, seekerId, compId, groupName);
+            //groupChats = await Http.GetFromJsonAsync<List<GroupChat>>($"https://localhost:7280/api/Message/GetGroupsBySeeker?seekerId={seekerId}");
+            await Swal.FireAsync("Thành công!", "Thêm cuộc trò chuyện mới thành công!", SweetAlertIcon.Success);
+            StateHasChanged();
+        }
+        else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            await Swal.FireAsync("Thất bại!", "Cuộc trò chuyện đã tồn tại!", SweetAlertIcon.Error);
+        }
+        else
+        {
+            await Swal.FireAsync("Thất bại!", "Đã có lỗi xảy ra. Vui lòng kiểm tra lại!", SweetAlertIcon.Error);
+        }
+    }
+    
+
+}

@@ -1,0 +1,431 @@
+﻿@page "/joblist"
+
+
+@inject IHttpContextAccessor HttpAccessor
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@using CurrieTechnologies.Razor.SweetAlert2
+@inject SweetAlertService Swal
+
+@inject HttpClient HttpClient
+@using System.Net.Http;
+@using System.Net.Http.Json;
+@using Api.Models
+@using Newtonsoft.Json;
+@using System.Net;
+@inject NavigationManager NavManager
+
+<style>
+    
+   .div-custom select {
+    width: 100%;
+    height: 45px;
+    background: #fff;
+    border-radius: 0px;
+    padding: 11px 19px 11px 10px;
+    color: #616875;
+    line-height: 20px;
+    border: 1px solid #ededed;
+    }
+
+    .select-custom {
+        width: 150px; /* Adjust width as desired */
+        height: 30px; /* Adjust height as desired */
+        padding: 8px 10px; /* Adjust padding for aesthetics and usability */
+        border: 1px solid #ccc; /* Customize border color */
+        border-radius: 4px; /* Customize border radius */
+        background-color: #fff; /* Customize background color */
+        font-family: inherit; /* Inherit font from parent element */
+        font-size: 16px; /* Customize font size */
+        cursor: pointer; /* Indicate interactivity on hover */
+        outline: none; /* Remove default outline on focus */
+    }
+
+        .select-custom:hover {
+            border-color: #999; /* Change border color on hover */
+        }
+
+        .select-custom option {
+            background-color: #fff; /* Customize option background color */
+            color: #333; /* Customize option text color */
+        }
+
+        .select-custom::-ms-expand { /* For Internet Explorer versions 10-11 */
+            display: none;
+        }
+
+        .select-custom:focus::-ms-validity-choice { /* For Internet Explorer versions 10-11 */
+            background-color: transparent;
+        }
+
+        .select-custom::-moz-placeholder { /* For Firefox pre-57 */
+            color: #999; /* Customize placeholder color */
+            opacity: 1; /* Ensure placeholder is visible */
+        }
+
+        .select-custom::placeholder { /* For modern browsers */
+            color: #999; /* Customize placeholder color */
+            opacity: 1; /* Ensure placeholder is visible */
+        }
+
+        /* Arrow styling (optional) */
+        .select-custom::after {
+            content: "\25BC"; /* Down arrow character (Unicode) */
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            font-size: 12px; /* Adjust arrow size */
+            color: #999; /* Customize arrow color */
+            pointer-events: none; /* Prevent accidental clicks on arrow */
+        }
+
+        /* Focus state (optional) */
+        .select-custom:focus {
+            border-color: #007bff; /* Customize focus border color */
+        }
+
+        .select-custom option:hover {
+            background-color: #e6e6e6; /* Subtle hover background color */
+        }
+
+        /* Selected option styling */
+        .select-custom option:selected {
+            background-color: #007bff; /* Highlight selected option */
+            color: #fff; /* Ensure white text on selected option */
+        }
+
+        /* Disabled option styling */
+        .select-custom option:disabled {
+            background-color: #ccc; /* Gray out disabled options */
+            color: #999; /* Muted text color for disabled options */
+        }
+
+    
+
+
+   
+</style>
+
+
+<main>
+
+    <!-- Hero Area Start-->
+    <div class="slider-area ">
+        <div class="single-slider section-overly slider-height2 d-flex align-items-center" style="background-image: url('@ImageUrl')">
+            <div class="container">
+                <div class="row">
+                    <div class="col-xl-12">
+                        <div class="hero-cap text-center">
+                            <h2>Tìm công việc phù hợp</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Hero Area End -->
+    <!-- Job List Area Start -->
+    <div class="job-listing-area pt-120 pb-120">
+        <div class="container">
+            <div class="row">
+                <!-- Left content -->
+                <div class="col-xl-3 col-lg-3 col-md-4">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="small-section-tittle2 mb-45">
+                                <div class="ion">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         xmlns:xlink="http://www.w3.org/1999/xlink"
+                                         width="20px" height="12px">
+                                        <path fill-rule="evenodd" fill="rgb(27, 207, 107)"
+                                              d="M7.778,12.000 L12.222,12.000 L12.222,10.000 L7.778,10.000 L7.778,12.000 ZM-0.000,-0.000 L-0.000,2.000 L20.000,2.000 L20.000,-0.000 L-0.000,-0.000 ZM3.333,7.000 L16.667,7.000 L16.667,5.000 L3.333,5.000 L3.333,7.000 Z" />
+                                    </svg>
+                                </div>
+                                <h4>Lọc công việc</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Job Category Listing start -->
+                    <div class="job-category-listing mb-50">
+                        <!-- single one -->
+                        <div class="single-listing">
+                            <div class="small-section-tittle2">
+                                <h4>Tìm kiếm công việc</h4>
+                            </div>
+                            <!-- Select job items start -->
+                            <div>
+                                <input @bind="SearchTerm" class="form-control" @oninput="SearchJobs" placeholder="Tìm kiếm..." />
+                            </div>
+                            <!--  Select job items End-->
+                            <!-- select-Categories start -->
+                           @* <div class="select-Categories pt-80 pb-50">
+                                <div class="small-section-tittle2">
+                                    <h4>Job Type</h4>
+                                </div>
+                                <label class="container">
+                                    Full Time
+                                    <input type="checkbox">
+                                    <span class="checkmark"></span>
+                                </label>
+                                <label class="container">
+                                    Part Time
+                                    <input type="checkbox" checked="checked active">
+                                    <span class="checkmark"></span>
+                                </label>
+                                <label class="container">
+                                    Remote
+                                    <input type="checkbox">
+                                    <span class="checkmark"></span>
+                                </label>
+                                <label class="container">
+                                    Freelance
+                                    <input type="checkbox">
+                                    <span class="checkmark"></span>
+                                </label>
+                            </div>*@
+                            <!-- select-Categories End -->
+                        </div>
+                        <!-- single two -->
+                        <div class="single-listing ">
+                            <div class="small-section-tittle2 pt-30">
+                                <h4>Danh mục </h4>
+                            </div>
+                            <!-- Select job items start -->
+                            <div class="div-custom">
+                                <select class="select-custom" @bind="SelectedCategory" @oninput="SearchJobsByCategory">
+                                    <option value="0">-- Tất cả danh mục --</option>
+                                    @foreach (var item in categories)
+                                    {
+                                        <option value="@item.CategoryId">@item.CategoryName</option>
+                                    }
+                                </select>
+                            </div>
+                            <!--  Select job items End-->
+                            <!-- select-Categories start -->
+                            <div class="select-Categories pt-30">
+                                <div class="small-section-tittle2">
+                                    <h4>Địa điểm</h4>
+                                </div>
+                                @foreach (var location in locations)
+                                {
+                                    <label class="container">
+                                        <input type="checkbox" checked="@selectedLocations.Contains(location.LocationId)" @onclick="() => ToggleSelection(location.LocationId)" /> @location.Name
+                                        <span class="checkmark" ></span>
+                                    </label>
+                                }
+                                <button class="genric-btn danger small" @onclick="@(() => SearchJobsByLocation())">Search</button>
+                            </div>
+                            <!-- select-Categories End -->
+                        </div>
+                       
+                        
+                    </div>
+                    <!-- Job Category Listing End -->
+                </div>
+                <!-- Right content -->
+                <div class="col-xl-9 col-lg-9 col-md-8">
+                    <!-- Featured_job_start -->
+                    <section class="featured-job-area">
+                        
+                        <div class="container">
+                            <!-- Count of Job list Start -->
+                            
+                            <div class="row">
+                                <div class="col-lg-12">
+                                    <div class="count-job mb-35">
+                                        @if (jobs != null)
+                                        {
+                                            <span>Có @jobs.Count() công việc</span>
+                                        }
+                                        else
+                                        {
+                                            <span>Không có công việc nào</span>
+                                        }                                      
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Count of Job list End -->
+                            <!-- single-job-content -->
+                            @if (jobs != null)
+                            {
+                                foreach (var item in jobs)
+                                {
+
+                                    <div class="single-job-items mb-30">
+                                        <div class="job-items">
+                                            @if (item.Company != null)
+                                            {
+                                                <div class="company-img">
+                                                    <a href="#"><img src="@item.Company.CompanyPhoto" height="85px" width="85px" alt=""></a>
+                                                </div>
+                                            }
+                                            <div class="job-tittle job-tittle2">
+
+                                                <h4 style="width: 300px; white-space: nowrap;overflow: hidden; text-overflow: ellipsis;">@item.JobTitle</h4>
+                                                
+                                                <ul>
+                                                    <li>Ngày hết hạn:  @item.ExpiredDate.ToShortDateString()</li>
+                                                    @if(item.Location != null)
+                                                    {
+                                                        <li><i class="fas fa-map-marker-alt"></i>@item.Location.Name</li>
+                                                    }
+                                                    <li>$ @item.SalaryRange</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                        <div class="items-link items-link2 f-right">
+                                           
+                                            <a href="#" @onclick="@(() => NavigateToDetails(item.JobId))">Thông tin</a>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="single-job-items mb-30">
+                                    <p>Không có công việc nào</p>
+                                </div>
+                            }
+
+                        </div>
+                    </section>
+                    <!-- Featured_job_end -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+   
+
+</main>
+
+
+
+@code {
+    private string ImageUrl = "assets/img/hero/about.jpg";
+
+    public int type = 0;
+    HttpClient http = new HttpClient();
+    private bool isLoading = true;
+
+
+    public List<JobList> jobs = new List<JobList>();
+    private List<Category> categories = new List<Category>();
+    private List<Location> locations = new List<Location>();
+
+    private string SearchTerm { get; set; }
+    private int SelectedCategory { get; set; }
+    private List<int> selectedLocations = new List<int>();
+
+
+    string api_url = "https://localhost:7280/";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        type = await sessionStorage.GetItemAsync<int>("Type");
+        StateHasChanged();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        //type = await sessionStorage.GetItemAsync<int>("Type");
+        jobs = await http.GetFromJsonAsync<List<JobList>>(api_url + "api/JobList");   
+        categories = await http.GetFromJsonAsync<List<Category>>("https://localhost:7280/api/Category");
+        locations = await http.GetFromJsonAsync<List<Location>>("https://localhost:7280/api/Location");
+    }
+    private void NavigateToDetails(int id)
+    {
+        NavManager.NavigateTo($"/details?id={id}");
+    }
+
+    private async Task SearchJobs(ChangeEventArgs e)
+    {
+        // Gán giá trị tìm kiếm từ input vào SearchTerm
+        SearchTerm = e.Value.ToString();
+
+        try
+        {
+            if (string.IsNullOrEmpty(SearchTerm))
+            {
+                jobs = await http.GetFromJsonAsync<List<JobList>>(api_url + "api/JobList");
+            }
+            else
+            {
+                selectedLocations.Clear();
+                SelectedCategory = 0;
+                // Thực hiện tìm kiếm với điều kiện phù hợp
+                jobs = (await http.GetFromJsonAsync<List<JobList>>($"https://localhost:7280/api/JobList/search?keyword={Uri.EscapeDataString(SearchTerm)}")) ?? null;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.ToString());
+        }
+    }
+    private async Task SearchJobsByCategory(ChangeEventArgs e)
+    {
+        SelectedCategory = int.Parse(e.Value.ToString());
+
+        try
+        {
+            if (SelectedCategory == 0)
+            {
+                jobs = await http.GetFromJsonAsync<List<JobList>>(api_url + "api/JobList");
+            }
+            else
+            {
+                selectedLocations.Clear();
+                SearchTerm = "";
+                // Thực hiện tìm kiếm với category được chọn
+                jobs = (await http.GetFromJsonAsync<List<JobList>>($"https://localhost:7280/api/JobList/SearchByCategory?id={SelectedCategory}")) ?? null;
+
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.ToString());
+        }
+    }
+    
+
+    void ToggleSelection(int locationId)
+    {
+        if (selectedLocations.Contains(locationId))
+        {
+            SearchTerm = "";
+            SelectedCategory = 0;
+            selectedLocations.Remove(locationId);
+        }
+        else
+        {
+            SearchTerm = "";
+            SelectedCategory = 0;
+            selectedLocations.Add(locationId);
+        }
+    }
+
+    private async Task SearchJobsByLocation()
+    {
+
+        try
+        {
+            if (selectedLocations.Count() == 0)
+            {
+                jobs = await http.GetFromJsonAsync<List<JobList>>(api_url + "api/JobList");
+            }
+
+            else
+            {
+                string url = "https://localhost:7280/api/JobList/SearchByLocation?";
+                url += string.Join("&", selectedLocations.Select(id => $"ids={id}"));
+                //string idsString = string.Join(",", selectedLocations.Select(id => id.ToString()));
+                jobs = (await http.GetFromJsonAsync<List<JobList>>($"{url}")) ?? null;
+            }
+        }
+        catch (Exception ex)
+        {
+            // Xử lý các ngoại lệ nếu có
+            Console.WriteLine(ex.ToString());
+        }
+    }
+}

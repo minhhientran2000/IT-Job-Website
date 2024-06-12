@@ -1,0 +1,12 @@
+﻿#chartdiv {
+    width: 100%;
+    height: 200px;
+}
+#graphdiv {
+    width: 100%;
+    height: 300px;
+}
+#staticgraphdiv {
+    width: 100%;
+    height: 300px;
+}

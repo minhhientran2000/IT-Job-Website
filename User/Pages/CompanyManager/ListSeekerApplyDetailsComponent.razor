@@ -1,0 +1,653 @@
+﻿@page "/listapplydetail"
+
+@inject NavigationManager NavManager
+@inject IHttpContextAccessor HttpAccessor
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+
+@using CurrieTechnologies.Razor.SweetAlert2
+@inject SweetAlertService Swal
+
+@using Api.Models
+@using System.Net;
+@using System.Net.Mail;
+@inject IJSRuntime JSRuntime
+
+
+<main>
+
+    <!-- Hero Area Start-->
+    <div class="slider-area ">
+        <div class="single-slider section-overly slider-height2 d-flex align-items-center" style="background-image: url('@ImageUrl')">
+            <div class="container">
+                <div class="row">
+                    <div class="col-xl-12">
+                        <div class="hero-cap text-center">
+                            <h2>Danh sách</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Hero Area End -->
+    <!-- Job List Area Start -->
+    <div class="job-listing-area pt-120 pb-120">
+        <div class="container">
+           @* <div class="row">            
+                <div class="col-xl-9 col-lg-9 col-md-8">*@
+                    <!-- Featured_job_start -->
+                    <section class="featured-job-area">
+                        <h3 class="mb-30" style="text-align: center">Trạng thái: <i>Đang chờ xử lý</i></h3>
+                        <div class="container" style="margin-bottom: 30px; padding: 0 30px 0 30px; border: 1px solid gray;">
+                            <!-- Count of Job list Start -->
+                            <div class="row">
+                                <div class="col-lg-12">
+                                    <div class="count-job mb-35" style="margin-top: 20px;">
+                                        @if (seekers != null)
+                                        {
+                                            <span>Có @seekers.Count() hồ sơ đang chờ xử lý</span>
+                                        }
+                                        else
+                                        {
+                                            <span>Không có hồ sơ nào chờ xử lý</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Count of Job list End -->
+                            <!-- single-job-content -->
+                            @if (seekers != null)
+                            {
+                                @foreach (var item in seekers)
+                                {
+
+                                    <div class="single-job-items">
+                                        <div class="job-items">
+                                            @if (item.Photo != null)
+                                            {
+                                                <div class="company-img">
+                                                    <a href="#"><img src="@item.Photo" height="85px" width="85px" alt=""></a>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div class="company-img">
+                                                    <a href="#"><img src="../assets/img_avatar.png" height="85px" width="85px" alt=""></a>
+                                                </div>
+                                            }
+                                            <div class="job-tittle job-tittle2">
+                                                <a href="#">
+                                                    <h4>@item.Name</h4>
+                                                </a>
+                                                <ul>
+                                                    @*@if(item.PhoneNumber != null)
+                                                    {
+                                                        <li>Phone Number: @item.PhoneNumber </li>
+                                                    }
+                                                    else
+                                                    {
+                                                        <li>Phone Number: No </li>
+                                                    }*@
+                                                    <li>@(item.PhoneNumber != null ? item.PhoneNumber : "Không có")</li>
+                                                    <li>GPA: @(item.GPA != null ? item.GPA : "Không có")</li>
+                                                    <li>Chuyên ngành: @(item.Major != null ? item.Major : "Không có")</li>
+                                                    <a style="float: right;" @onclick="@(() => GetCV(item.SeekerId))" href="#" data-toggle="modal" data-target=".bd-example-modal-lg">
+                                                    <li><i><u>File CV</u></i></li></a>
+                                                   
+                                                </ul>
+                                            </div>
+                                        </div>
+                                      @*  <div class="items-link items-link2 f-right">
+                                            <a @onclick="@(() => GetCV(item.SeekerId))" href="#" data-toggle="modal" data-target=".bd-example-modal-lg">File CV</a>
+                                        </div>*@
+                                        <div class="items-link items-link2" style="float: right">
+                                            <a @onclick="@(async () => await ConfirmApprove(item.UserId))" href="">Chấp thuận</a>
+                                            <a @onclick="@(async () => await ConfirmReject(item.UserId))" href="">Từ chối</a>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="single-job-items mb-30">
+                                    <p>Không có hồ sơ chờ xử lý</p>
+                                </div>
+                            }
+
+                        </div>
+
+
+                        <h3 class="mb-30" style="text-align: center">Trạng thái: <i>Chấp thuận</i></h3>
+                        <div class="container" style="margin-bottom: 30px; padding: 0 30px 0 30px; border: 1px solid gray;">
+                            <!-- Count of Job list Start -->
+                            <div class="row">
+                                <div class="col-lg-12">
+                                <div class="count-job mb-35" style="margin-top: 20px;">
+                                        @if (seekers_approved != null)
+                                        {
+                                            <span>Có @seekers_approved.Count() hồ sơ chấp thuận phỏng vấn</span>
+                                        }
+                                        else
+                                        {
+                                            <span>Không có hồ sơ nào được chấp thuận phỏng vấn</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Count of Job list End -->
+                            <!-- single-job-content -->
+                            @if (seekers_approved != null)
+                            {
+                                @foreach (var item in seekers_approved)
+                                {
+
+                                    <div class="single-job-items">
+                                        <div class="job-items">
+                                            @if (item.Photo != null)
+                                            {
+                                                <div class="company-img">
+                                                    <a href="#"><img src="@item.Photo" height="85px" width="85px" alt=""></a>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div class="company-img">
+                                                    <a href="#"><img src="../assets/img_avatar.png" height="85px" width="85px" alt=""></a>
+                                                </div>
+                                            }
+                                            <div class="job-tittle job-tittle2">
+                                                <a href="#">
+                                                    <h4>@item.Name</h4>
+                                                </a>
+                                                <ul>                                                    
+                                                    <li>@(item.PhoneNumber != null ? item.PhoneNumber : "Không có")</li>
+                                                    <li>GPA: @(item.GPA != null ? item.GPA : "Không có")</li>
+                                                    <li>Chuyên ngành: @(item.Major != null ? item.Major : "Không có")</li>
+                                                    <a style="float: right;" @onclick="@(() => GetCVApprove(item.SeekerId))" href="#" data-toggle="modal" data-target=".bd-example-modal-lg-2">
+                                                    <li><i><u>File CV</u></i></li></a>
+
+                                                </ul>
+                                            </div>
+                                        </div>
+                                     
+                                        <div class="items-link items-link2" style="float: right">
+                                           @* <a @onclick="@(async () => await ConfirmApprove(item.UserId))" href="">Approve</a>*@
+                                            <a @onclick="@(async () => await ConfirmReject(item.UserId))" href="">Không đạt</a>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="single-job-items mb-30">
+                                <p>Không có hồ sơ nào</p>
+
+                                </div>
+                            }
+
+                        </div>
+
+
+                        <h3 class="mb-30" style="text-align: center">Trạng thái: <i>Từ chối</i></h3>
+                        <div class="container" style="margin-bottom: 30px; padding: 0 30px 0 30px; border: 1px solid gray;">
+                            <!-- Count of Job list Start -->
+                            <div class="row">
+                                <div class="col-lg-12">
+                                <div class="count-job mb-35" style="margin-top: 20px;">
+                                        @if (seekers_rejected != null)
+                                        {
+                                            <span>Có @seekers_rejected.Count() hồ sơ từ chối</span>
+                                        }
+                                        else
+                                        {
+                                            <span>Không có hồ sơ nào bị từ chối</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Count of Job list End -->
+                            <!-- single-job-content -->
+                            @if (seekers_rejected != null)
+                            {
+                                @foreach (var item in seekers_rejected)
+                                {
+
+                                    <div class="single-job-items">
+                                        <div class="job-items">
+                                            @if (item.Photo != null)
+                                            {
+                                                <div class="company-img">
+                                                    <a href="#"><img src="@item.Photo" height="85px" width="85px" alt=""></a>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div class="company-img">
+                                                    <a href="#"><img src="../assets/img_avatar.png" height="85px" width="85px" alt=""></a>
+                                                </div>
+                                            }
+                                            <div class="job-tittle job-tittle2">
+                                                <a href="#">
+                                                    <h4>@item.Name</h4>
+                                                </a>
+                                                <ul>
+                                                    @*@if(item.PhoneNumber != null)
+                                            {
+                                            <li>Phone Number: @item.PhoneNumber </li>
+                                            }
+                                            else
+                                            {
+                                            <li>Phone Number: No </li>
+                                            }*@
+                                                    <li>@(item.PhoneNumber != null ? item.PhoneNumber : "Không có")</li>
+                                                    <li>GPA: @(item.GPA != null ? item.GPA : "Không có")</li>
+                                                    <li>Chuyên ngành: @(item.Major != null ? item.Major : "Không có")</li>
+                                                    @*<a style="float: right;" @onclick="@(() => GetCV(item.SeekerId))" href="#" data-toggle="modal" data-target=".bd-example-modal-lg">
+                                            <li><i><u>File CV</u></i></li></a>*@
+
+                                                </ul>
+                                            </div>
+                                        </div>
+                                        @*  <div class="items-link items-link2 f-right">
+                                <a @onclick="@(() => GetCV(item.SeekerId))" href="#" data-toggle="modal" data-target=".bd-example-modal-lg">File CV</a>
+                                </div>*@
+                                        <div class="items-link items-link2" style="float: right">
+                                            @* <a @onclick="@(async () => await ConfirmApprove(item.UserId))" href="">Approve</a>*@
+                                            @*<a @onclick="@(async () => await ConfirmReject(item.UserId))" href="">Reject</a>*@
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="single-job-items mb-30">
+                                    <p>Không có hồ sơ nào</p>
+
+                                </div>
+                            }
+
+                        </div>
+
+                    </section>
+                    <!-- Featured_job_end -->
+                </div>
+            @*</div>
+        </div>*@
+    </div>
+    <div class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Seeker CV</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+
+                    <EditForm Model="@seeker">
+                        <DataAnnotationsValidator />
+                       
+                        @if (seeker.FileCV != null)
+                        {
+                          @*  <input type="text" name="last_name" placeholder="@seeker.FileCV" disabled
+                                   class="single-input">*@
+                            @*<button @onclick="DownloadFile">Download File</button>*@
+
+                            <object data="@seeker.FileCV" type="application/pdf" width="100%" height="400px">
+                                <embed src="@seeker.FileCV" type="application/pdf" />
+                            </object>
+                        }
+                        else
+                        {
+                            <input type="text" name="last_name" placeholder="Không có CV" disabled
+                                   class="single-input">
+                        }
+                       
+
+                        @*<button type="submit" class="btn btn-primary">Save</button>*@
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Quay lại</button>
+                       
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade bd-example-modal-lg-2" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Seeker CV</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+
+                    <EditForm Model="@seeker_approve_cv">
+                        <DataAnnotationsValidator />
+
+                        @if (seeker_approve_cv.FileCV != null)
+                        {
+                            @*  <input type="text" name="last_name" placeholder="@seeker.FileCV" disabled
+                        class="single-input">*@
+                            @*<button @onclick="DownloadFile">Download File</button>*@
+
+                            <object data="@seeker_approve_cv.FileCV" type="application/pdf" width="100%" height="400px">
+                                <embed src="@seeker_approve_cv.FileCV" type="application/pdf" />
+                            </object>
+                        }
+                        else
+                        {
+                            <input type="text" name="last_name" placeholder="Không có CV" disabled
+                                   class="single-input">
+                        }
+
+
+                        @*<button type="submit" class="btn btn-primary">Save</button>*@
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Quay lại</button>
+
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+</main>
+
+
+
+
+@code{
+    private string id2;
+    private string userId;
+
+    private string ImageUrl = "assets/img/hero/about.jpg";
+    private List<Seeker>? seekers;
+    private List<Seeker>? seekers_approved;
+    private List<Seeker>? seekers_rejected;
+
+    private Seeker seeker = new Seeker();
+    private Seeker seeker_approve_cv = new Seeker();
+    private string email = "";
+    private string comp_name = "";
+    private string jobtitle = "";
+
+    private ApplicationItem applicationItem = new ApplicationItem();
+
+    HttpClient http = new HttpClient();
+    protected override void OnInitialized()
+    {
+        var uri = new Uri(NavManager.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        id2 = query["id2"];
+    }
+    protected override async Task OnInitializedAsync()
+    {
+
+        try
+        {
+            seekers = await http.GetFromJsonAsync<List<Seeker>>($"https://localhost:7280/api/Application/GetSeekersForJob/{id2}?statusId={1}");
+            await GetApprove();
+            await GetReject();
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            seekers = null;
+            await GetApprove();
+            await GetReject();
+        }
+        catch (Exception ex)
+        {
+            seekers = null;
+            await GetApprove();
+            await GetReject();
+        }
+    }
+    void GetCV(int id)
+    {
+        seeker = seekers.FirstOrDefault(x => x.SeekerId == id);
+    }
+
+    void GetCVApprove(int id)
+    {
+        seeker_approve_cv = seekers_approved.FirstOrDefault(x => x.SeekerId == id);
+    }
+
+
+
+    private async Task GetApprove()
+    {
+        try
+        {
+            seekers_approved = await http.GetFromJsonAsync<List<Seeker>>($"https://localhost:7280/api/Application/GetSeekersForJob/{id2}?statusId={2}");           
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            seekers_approved = null;
+        }
+        catch (Exception ex)
+        {
+            seekers_approved = null;
+        }
+    }
+
+    private async Task GetReject()
+    {
+        try
+        {
+            seekers_rejected = await http.GetFromJsonAsync<List<Seeker>>($"https://localhost:7280/api/Application/GetSeekersForJob/{id2}?statusId={3}");
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            seekers_rejected = null;
+        }
+        catch (Exception ex)
+        {
+            seekers_rejected = null;
+        }
+    }
+
+
+
+    private async Task ConfirmApprove(int id)
+    {      
+        var confirmationResult = await Swal.FireAsync(
+            new SweetAlertOptions
+                {
+                    Title = "Do you want to approve this profile?",
+                    Text = "You won't be able to revert this!",
+                    Icon = SweetAlertIcon.Info,
+                    ShowCancelButton = true,
+                    ConfirmButtonText = "Yes",
+                    CancelButtonText = "No, cancel!"
+                }
+        );
+
+        if (confirmationResult.IsConfirmed)
+        {
+            await Approve(id);
+        }
+    }
+
+    async Task Approve(int id)
+    {
+
+        var response = await http.PutAsJsonAsync($"https://localhost:7280/api/Application/{id2}?id2={id}&statusId={2}",2);        
+        var res = await http.GetFromJsonAsync<Seeker>($"https://localhost:7280/api/Seeker/GetByUserId/{id}");
+        if(res.User.Email != null)
+        {
+            email = res.User.Email;
+        }
+        var job = await http.GetFromJsonAsync<JobList>($"https://localhost:7280/api/JobList/{id2}");
+        comp_name = job.Company.CompanyName;
+        jobtitle = job.JobTitle;
+
+        if (response.IsSuccessStatusCode)
+        {
+            _ = SendApprovalEmail(email);
+            // Cập nhật danh sách công việc sau khi xóa thành công
+            await OnInitializedAsync();
+            await Swal.FireAsync("Success!", "Approved successfully!", SweetAlertIcon.Success);
+        }
+        else
+        {
+            await Swal.FireAsync("Failed!", "Approved failed!", SweetAlertIcon.Error);
+        }
+    }
+
+    private async Task ConfirmReject(int id)
+    {
+        var confirmationResult = await Swal.FireAsync(
+            new SweetAlertOptions
+                {
+                    Title = "Do you want to reject this profile?",
+                    Text = "You won't be able to revert this!",
+                    Icon = SweetAlertIcon.Warning,
+                    ShowCancelButton = true,
+                    ConfirmButtonText = "Yes, reject",
+                    CancelButtonText = "No, cancel!"
+                }
+        );
+
+        if (confirmationResult.IsConfirmed)
+        {
+            await Reject(id);
+        }
+    }
+
+    async Task Reject(int id)
+    {
+        var response = await http.PutAsJsonAsync($"https://localhost:7280/api/Application/{id2}?id2={id}&statusId={3}", 3);
+        var res = await http.GetFromJsonAsync<Seeker>($"https://localhost:7280/api/Seeker/GetByUserId/{id}");
+        if (res.User.Email != null)
+        {
+            email = res.User.Email;
+        }
+        var job = await http.GetFromJsonAsync<JobList>($"https://localhost:7280/api/JobList/{id2}");
+        comp_name = job.Company.CompanyName;
+        jobtitle = job.JobTitle;
+        if (response.IsSuccessStatusCode)
+        {
+            _ = SendRejectEmail(email);
+            // Cập nhật danh sách công việc sau khi xóa thành công
+            await OnInitializedAsync();
+            await Swal.FireAsync("Success!", "Rejected!", SweetAlertIcon.Success);
+        }
+        else
+        {
+            await Swal.FireAsync("Failed!", "Failed!", SweetAlertIcon.Error);
+        }
+    }
+
+
+
+    private void SendMail()
+    {
+        try
+        {
+            using (MailMessage mailMessage = new MailMessage())
+            {
+                mailMessage.From = new MailAddress("anjapan12345@gmail.com");
+                mailMessage.To.Add("tranminhhien131220@gmail.com");
+                mailMessage.Subject = "Sending Email";
+                mailMessage.Body = "<h2>Test</h2>";
+                mailMessage.IsBodyHtml = true;
+                using (SmtpClient smtpClient = new SmtpClient("smtp.gmail.com"))
+                {
+                    smtpClient.Credentials = null;
+                    smtpClient.UseDefaultCredentials = false;
+                    //smtpClient.Credentials = new System.Net.NetworkCredential("anjapan12345@gmail.com", "uxmaiejumuozjsqb");
+                    smtpClient.EnableSsl = true;
+                    smtpClient.Send(mailMessage);
+                }
+            }
+        }
+        catch(Exception)
+        {
+            throw;
+        }
+    }
+
+    async Task SendApprovalEmail(string email)
+    {
+        // Configure your SMTP client
+        using (SmtpClient client = new SmtpClient("smtp.gmail.com"))
+        {
+            client.UseDefaultCredentials = false;
+            client.Credentials = new System.Net.NetworkCredential("anjapan12345@gmail.com", "uxmaiejumuozjsqb");
+            client.EnableSsl = true;
+            client.Port = 587;
+
+            MailMessage mailMessage = new MailMessage();
+            mailMessage.From = new MailAddress("noreply@example.com", "NOREPLY");
+            //mailMessage.From = new MailAddress("anjapan12345@gmail.com");
+            mailMessage.To.Add(email);
+            mailMessage.Subject = "Cảm ơn bạn đã sử dụng trang web tìm việc làm của chúng tôi";
+
+            // Add content to the email body
+            mailMessage.Body = $"Xin chào,\n\n" +
+                               $"Chúng tôi xin gửi lời cảm ơn chân thành đến bạn về việc sử dụng trang web tìm việc làm của chúng tôi và chúc mừng hồ sơ của bạn đã được chấp thuận cho công việc {jobtitle} tại công ty {comp_name}.\n\n" +
+                               $"Đây là một bước quan trọng trong hành trình nghề nghiệp của bạn và chúng tôi rất vui vì bạn đã được chọn để phỏng vấn cho công việc.\n\n" +
+                               $"Chúng tôi hi vọng rằng bạn sẽ có một trải nghiệm tuyệt vời và chúng tôi sẽ tiếp tục hỗ trợ bạn trong việc tìm kiếm cơ hội nghề nghiệp tương lai.\n\n" +
+                               $"Nếu bạn có bất kỳ câu hỏi hoặc cần hỗ trợ gì, đừng ngần ngại liên hệ với chúng tôi.\n\n" +
+                               $"Một lần nữa, cảm ơn bạn đã sử dụng dịch vụ của chúng tôi.\n\n" +
+                               $"Trân trọng,\n" +
+                               $"Trang Web Tìm Việc Làm FindJob";
+
+            try
+            {
+                // Send the email asynchronously
+                await client.SendMailAsync(mailMessage);
+            }
+            catch (Exception ex)
+            {
+                // Handle any exceptions if necessary
+                Console.WriteLine($"Failed to send approval email: {ex.Message}");
+            }
+        }
+    }
+
+    async Task SendRejectEmail(string email)
+    {
+        // Configure your SMTP client
+        using (SmtpClient client = new SmtpClient("smtp.gmail.com"))
+        {
+            client.UseDefaultCredentials = false;
+            client.Credentials = new System.Net.NetworkCredential("anjapan12345@gmail.com", "uxmaiejumuozjsqb");
+            client.EnableSsl = true;
+            client.Port = 587; // Or any other port you are using
+
+            // Create the email message
+            MailMessage mailMessage = new MailMessage();
+            mailMessage.From = new MailAddress("noreply@example.com", "NOREPLY");
+            //mailMessage.From = new MailAddress("anjapan12345@gmail.com");
+            mailMessage.To.Add(email);
+            mailMessage.Subject = "Cảm ơn bạn đã sử dụng trang web tìm việc làm của chúng tôi";
+
+            // Add content to the email body
+            mailMessage.Body = $"Xin chào,\n\n" +
+                           $"Chúng tôi xin gửi lời cảm ơn đến bạn đã sử dụng trang web tìm việc làm của chúng tôi.\n\n" +
+                           $"Chúng tôi đã nhận được hồ sơ của bạn cho công việc {jobtitle} tại công ty {comp_name}, nhưng rất tiếc phải thông báo rằng sau quá trình xem xét, nhà tuyển dụng đã quyết định không tiếp tục với hồ sơ của bạn cho công việc này.\n\n" +
+                           $"Xin đừng nản lòng, đó chỉ là một bước trong hành trình tìm kiếm việc làm của bạn. Hãy tiếp tục nỗ lực và cố gắng, cơ hội mới sẽ đến với bạn.\n\n" +
+                           $"Chúng tôi mong rằng bạn sẽ tiếp tục sử dụng dịch vụ của chúng tôi để tìm kiếm cơ hội nghề nghiệp tốt nhất.\n\n" +
+                           $"Nếu bạn có bất kỳ câu hỏi hoặc cần hỗ trợ gì, đừng ngần ngại liên hệ với chúng tôi.\n\n" +
+                           $"Một lần nữa, xin cảm ơn bạn đã sử dụng dịch vụ của chúng tôi.\n\n" +
+                           $"Trân trọng,\n" +
+                           $"Trang Web Tìm Việc Làm FindJob";
+
+            try
+            {
+                // Send the email asynchronously
+                await client.SendMailAsync(mailMessage);
+            }
+            catch (Exception ex)
+            {
+                // Handle any exceptions if necessary
+                Console.WriteLine($"Failed to send approval email: {ex.Message}");
+            }
+        }
+    }
+}

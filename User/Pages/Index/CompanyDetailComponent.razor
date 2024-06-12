@@ -1,0 +1,164 @@
+﻿@page "/companydetail"
+@inject NavigationManager NavManager
+@inject IHttpContextAccessor HttpAccessor
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+
+@using CurrieTechnologies.Razor.SweetAlert2
+@inject SweetAlertService Swal
+@inject IJSRuntime JSRuntime
+
+@using Api.Models
+
+<div class="slider-area ">
+    <div class="single-slider section-overly slider-height2 d-flex align-items-center" style="background-image: url('@ImageUrl')">
+        <div class="container">
+            <div class="row">
+                <div class="col-xl-12">
+                    <div class="hero-cap text-center">
+                        <h2>Thông tin công ty</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="blog_area single-post-area section-padding">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 posts-list">
+                <div class="single-post">
+                    <div class="feature-img">
+                        <img class="img-fluid" src="@comp.CompanyPhoto" alt="">
+                    </div>
+                    <div class="blog_details">
+                        <h2>
+                            <b>@comp.CompanyName</b>
+                        </h2>
+                        <ul class="blog-info-link mt-3 mb-4">
+                            <li>@comp.CompanyWebsiteUrl</li>
+                            <li><a href="#"><i class="fa fa-comments"></i> @comp.CompanyEmail</a></li>
+                        </ul>
+                        
+                        <div class="quote-wrapper">
+                            <div class="quotes">
+                                @comp.CompanyDescription
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+                <div class="single-post">
+                <h2><b>Tuyển dụng</b></h2>
+                @if (jobs != null)
+                {
+                    @foreach (var item in jobs)
+                    {
+
+                        <div class="single-job-items mb-30">
+                            <div class="job-items">
+                                <div class="company-img">
+                                    <a href="#"><img src="@item.Company.CompanyPhoto" height="85px" width="85px" alt=""></a>
+                                </div>
+                                <div class="job-tittle job-tittle2">
+                                    <a href="#" @onclick="@(() => NavigateToDetails(item.JobId))">
+                                        <h4 style="width: 600px; white-space: nowrap;overflow: hidden; text-overflow: ellipsis;">
+                                            @item.JobTitle
+                                        </h4>
+                                    </a>
+                                    <ul>
+                                        <li>Ngày hết hạn:  @item.ExpiredDate.ToShortDateString()</li>
+                                        @if (item.Location != null)
+                                        {
+                                            <li><i class="fas fa-map-marker-alt"></i>@item.Location.Name</li>
+                                        }
+                                        <li>$ @item.SalaryRange</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="single-job-items mb-30">
+                        <p>Không có công việc nào</p>
+
+                    </div>
+                }
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="blog_right_sidebar">
+                    <aside class="single_sidebar_widget post_category_widget">
+                        <h4 class="widget_title"><b>Địa chỉ</b></h4>
+                        <ul class="list cat-list">
+                            <li>
+                                @comp.CompanyAddress
+                            </li>
+                            <iframe  width="100%" height="297" frameborder="0" style="border:0"
+                                    src="https://www.google.com/maps/embed/v1/place?q={Uri.EscapeDataString(@comp.CompanyAddress)}&key=AIzaSyCVgO8KzHQ8iKcfqXgrMnUIGlD-piWiPpo"
+                                    allowfullscreen>
+                            </iframe>
+                        </ul>
+                    </aside>
+                    <aside class="single_sidebar_widget popular_post_widget">
+                        <h3 class="widget_title"><b>Các công ty khác</b></h3>
+                        @foreach(var item in list_comp)
+                        {
+                            <div class="media post_item">
+                                <img src="@item.CompanyPhoto" width="80px" alt="post">
+                                <div class="media-body">
+                                    <a href="" @onclick="@(() => NavigateToCompany(item.CompanyId))">
+                                        <h3>@item.CompanyName</h3>
+                                    </a>
+                                    <p>@item.CompanyEmail</p>
+                                </div>
+                            </div>
+                        }
+ 
+                    </aside>
+                </div>
+            </div>
+        </div>
+                
+        </div>
+  
+</section>
+
+
+@code{
+    private string ImageUrl = "assets/img/hero/about.jpg";
+    HttpClient http = new HttpClient();
+    private string id;
+    private Company comp = new Company();
+    private List<Company> list_comp = new List<Company>(); 
+     private List<JobList> jobs = new List<JobList>();
+
+
+    protected override void OnInitialized()
+    {
+        var uri = new Uri(NavManager.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        id = query["id"];
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        //compId = await sessionStorage.GetItemAsync<int>("comId");
+        comp = await http.GetFromJsonAsync<Company>($"https://localhost:7280/api/Company/{id}");
+        list_comp = await http.GetFromJsonAsync<List<Company>>("https://localhost:7280/api/Company");
+        list_comp = list_comp.Where(c => c.CompanyId != Convert.ToInt32(id)).Take(4).ToList();
+        jobs = await http.GetFromJsonAsync<List<JobList>>($"https://localhost:7280/api/JobList/GetJobByCompanyId/{id}");              
+        
+    }
+    private async Task NavigateToCompany(int id)
+    {
+        comp = await http.GetFromJsonAsync<Company>($"https://localhost:7280/api/Company/{id}");
+    }
+    private void NavigateToDetails(int id)
+    {
+        NavManager.NavigateTo($"/details?id={id}");
+    }
+}

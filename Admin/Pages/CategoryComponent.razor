@@ -1,0 +1,195 @@
+﻿@page "/category"
+@using Api.Models
+
+@inject HttpClient HttpClient
+@using CurrieTechnologies.Razor.SweetAlert2
+@inject SweetAlertService Swal
+
+<div class="col-md-12">
+    <div class="card">
+        <div class="table-responsive pt-3">
+            <button type="button" class="btn btn-success" style="margin-left : 25px" data-toggle="modal" data-target="#createModal">Add Category <i class="typcn typcn-edit btn-icon-append"></i></button>
+            <table class="table table-striped project-orders-table">
+                <thead>
+                    <tr>
+                        <th class="ml-5">Category ID</th>
+                        <th>Category Name</th>                      
+                    </tr>
+                </thead>
+                @if (categories != null)
+                {
+                    <tbody>
+                        @foreach (var item in categories)
+                        {
+                            <tr>
+                                <td>@item.CategoryId</td>
+                                <td>@item.CategoryName</td>
+                                
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <button @onclick="@(() => EditCate(item.CategoryId))" type="button" class="btn btn-success btn-sm btn-icon-text mr-3" data-toggle="modal" data-target="#exampleModal">
+                                            Edit
+                                            <i class="typcn typcn-edit btn-icon-append"></i>
+                                        </button>
+                                        <button @onclick="@(async () => await ConfirmDelete(item.CategoryId))" type="button" class="btn btn-danger btn-sm btn-icon-text">
+                                            Delete
+                                            <i class="typcn typcn-delete-outline btn-icon-append"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                }
+            </table>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Edit Category</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+
+                <EditForm Model="@editCate" OnValidSubmit="HandleEditSubmit">
+                    <DataAnnotationsValidator />
+                    <div class="form-group">
+                        <label>Category Name :</label>
+                        <input type="text" @bind-value="editCate.CategoryName" class="form-control">
+                        <ValidationMessage For="@(() => editCate.CategoryName)" />
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>                    
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<div class="modal fade" id="createModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Create Category</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@newCate" OnSubmit="HandleCreateSubmit">
+                    <DataAnnotationsValidator />
+                    <div class="form-group">
+                        <label>Category Name : </label>
+                        <input type="text" required @bind-value="newCate.CategoryName" class="form-control">
+                        <ValidationMessage For="@(() => newCate.CategoryName)" />
+                    </div>
+                   
+                    <button type="submit" class="btn btn-primary">Create</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<Category> categories = new List<Category>();
+
+
+
+    private Category newCate = new Category();
+    private Category editCate = new Category();
+
+
+    string api_url = "https://localhost:7280/";
+
+    protected override async Task OnInitializedAsync()
+    {        
+        categories = await HttpClient.GetFromJsonAsync<List<Category>>(api_url + "api/Category");
+    }
+
+    async Task HandleEditSubmit()
+    {
+        var response = await HttpClient.PutAsJsonAsync(api_url + $"api/Category/{editCate.CategoryId}", editCate);
+        if (response.IsSuccessStatusCode)
+        {
+
+            await OnInitializedAsync();
+            await Swal.FireAsync("Success!", "Category edited successfully!", SweetAlertIcon.Success);
+
+        }
+        else
+        {
+            await Swal.FireAsync("Falied!", "Category edited failed!", SweetAlertIcon.Error);
+        }
+    }
+    async Task HandleCreateSubmit()
+    {
+        var response = await HttpClient.PostAsJsonAsync(api_url + "api/Category", newCate);
+        if (response.IsSuccessStatusCode)
+        {
+            await OnInitializedAsync();
+            newCate = new Category();
+            await Swal.FireAsync("Success!", "Category created successfully!", SweetAlertIcon.Success);
+        }
+        else
+        {
+            await Swal.FireAsync("Failed!", " Category created failed!", SweetAlertIcon.Error);
+        }
+    }
+
+
+    private async Task ConfirmDelete(int id)
+    {
+        var confirmationResult = await Swal.FireAsync(
+            new SweetAlertOptions
+                {
+                    Title = "Are you sure?",
+                    Text = "You won't be able to revert this!",
+                    Icon = SweetAlertIcon.Warning,
+                    ShowCancelButton = true,
+                    ConfirmButtonText = "Yes, delete it!",
+                    CancelButtonText = "No, cancel!"
+                }
+        );
+
+        if (confirmationResult.IsConfirmed)
+        {
+            await DeleteCate(id);
+        }
+    }
+
+    async Task DeleteCate(int id)
+    {
+        var response = await HttpClient.DeleteAsync(api_url + $"api/Category/{id}");
+        if (response.IsSuccessStatusCode)
+        {
+            // Cập nhật danh sách công việc sau khi xóa thành công
+            await OnInitializedAsync();
+            await Swal.FireAsync("Success!", "Category deleted successfully!", SweetAlertIcon.Success);
+        }
+        else
+        {
+            await Swal.FireAsync("Failed!", "Category deleted failed!", SweetAlertIcon.Error);
+        }
+    }
+
+    void EditCate(int id)
+    {
+        var str = categories.FirstOrDefault(x => x.CategoryId == id);
+        editCate.CategoryId = str.CategoryId;
+        editCate.CategoryName = str.CategoryName;
+    
+    }
+}

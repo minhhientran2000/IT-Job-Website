@@ -1,0 +1,223 @@
+﻿@page "/applicationmanage"
+
+@inject IHttpContextAccessor HttpAccessor
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@using CurrieTechnologies.Razor.SweetAlert2
+@inject SweetAlertService Swal
+
+@inject HttpClient HttpClient
+@using System.Net.Http;
+@using System.Net.Http.Json;
+@using Api.Models
+@using Newtonsoft.Json;
+@using System.Net;
+@inject NavigationManager NavManager
+
+<style>
+    .loading {
+        /* Định dạng cho loading */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+    }
+
+    .loading-text {
+        /* Định dạng cho văn bản trong loading */
+        font-size: 24px;
+        font-weight: bold;
+    }
+</style>
+
+@if (isLoading)
+{
+    <div class="loading">
+        <div class="loading-text">Đang tải...</div>
+        <!-- Bạn có thể thêm biểu tượng loading ở đây nếu cần -->
+    </div>
+}
+else
+{  
+<main>
+
+    <!-- Hero Area Start-->
+    <div class="slider-area ">
+        <div class="single-slider section-overly slider-height2 d-flex align-items-center" style="background-image: url('@ImageUrl')">
+            <div class="container">
+                <div class="row">
+                    <div class="col-xl-12">
+                        <div class="hero-cap text-center">
+                            <h2>Quản lý công việc đã ứng tuyển</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Hero Area End -->
+    <!-- Job List Area Start -->
+    <div class="job-listing-area pt-120 pb-120">
+        <div class="container">
+            <div class="row">
+                <!-- Left content -->
+                <div class="col-xl-3 col-lg-3 col-md-4">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="small-section-tittle2 mb-45">
+                                <div class="ion">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         xmlns:xlink="http://www.w3.org/1999/xlink"
+                                         width="20px" height="12px">
+                                        <path fill-rule="evenodd" fill="rgb(27, 207, 107)"
+                                              d="M7.778,12.000 L12.222,12.000 L12.222,10.000 L7.778,10.000 L7.778,12.000 ZM-0.000,-0.000 L-0.000,2.000 L20.000,2.000 L20.000,-0.000 L-0.000,-0.000 ZM3.333,7.000 L16.667,7.000 L16.667,5.000 L3.333,5.000 L3.333,7.000 Z" />
+                                    </svg>
+                                </div>
+                                <h4>Mô tả chung</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Job Category Listing start -->
+                    <div class="job-category-listing mb-50">
+                            <div class="single-listing">
+                                <div class="select-Categories">
+                                    <div class="small-section-tittle2">
+                                        <h4>Tất cả công việc đã ứng tuyển</h4>
+                                    </div>
+                                    <label class="container">
+                                        Xem trạng thái các công việc đã ứng tuyển
+                                        <input type="checkbox">
+                                    </label>
+
+                                </div>
+                                <!-- select-Categories End -->
+                            </div>
+                    </div>
+                    <!-- Job Category Listing End -->
+                </div>
+                <!-- Right content -->
+                <div class="col-xl-9 col-lg-9 col-md-8">
+                    <!-- Featured_job_start -->
+                    <section class="featured-job-area">
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <div class="count-job mb-35">
+                                    @if (application != null)
+                                    {
+                                        <span>Đã ứng tuyển @application.Count() công việc</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Chưa ứng tuyển công việc nào</span>
+                                    }
+
+
+                                </div>
+                            </div>
+                        </div>
+                        <div class="container" style="display: grid; grid-template-columns: 1fr 1fr;gap: 10px;">
+                            <!-- Count of Job list Start -->
+                           
+                            <!-- Count of Job list End -->
+                            <!-- single-job-content -->
+                            @if (application != null)
+                            {
+                                @foreach (var item in application)
+                                {
+                                    @if (item.Job != null)
+                                    {
+
+                                        <div class="single-job-items mb-30" style=" border: 1px solid gray; width: 90% ; border-radius: 10%;">
+                                            <div class="job-items">                                            
+                                                <div class="job-tittle job-tittle2">
+                                                    <a href="#">
+                                                        <h4>@item.Job.JobTitle</h4>
+                                                    </a>
+                                                    <ul>
+                                                        <li>Ngày hết hạn:  @item.Job.ExpiredDate.ToShortDateString()</li>
+                                                        <li>$ @item.Job.SalaryRange</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                    
+                                            <div class="items-link items-link2 f-right">
+                                                <br />
+                                                <span>Trạng thái: <b>@item.Status.StatusName</b></span>
+                                                <br/>
+                                                <a @onclick="@(() => NavigateToDetails(item.JobId))" href="#">Thông tin</a>
+                                                @*<a href="#">Status: @item.Status.StatusName</a>*@
+
+                                            </div>
+                                            
+                                        </div>
+                                      
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                <div class="single-job-items mb-30">
+                                    <p>Bạn chưa ứng tuyển công việc nào</p>
+
+                                </div>
+                            }
+
+                        </div>
+                    </section>
+                    <!-- Featured_job_end -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+  
+
+</main>
+}
+
+
+@code {
+    private string ImageUrl = "assets/img/hero/about.jpg";
+
+    public int userId = 0;
+    private bool isLoading = true;
+
+    HttpClient http = new HttpClient();
+
+    public List<Application> application = new List<Application>();
+
+
+    string api_url = "https://localhost:7280/";
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        userId = await sessionStorage.GetItemAsync<int>("ID");
+        StateHasChanged();
+    }
+    
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        await Task.Delay(500);
+        //userId = await sessionStorage.GetItemAsync<int>("ID");
+        
+        if (userId != 0)
+        {
+            isLoading = false;
+            try
+            {
+                application = await http.GetFromJsonAsync<List<Application>>($"https://localhost:7280/api/Application/GetByUser/{userId}");
+            }           
+            catch (Exception ex)
+            {
+                application = null;
+            }
+        }
+    }
+    private void NavigateToDetails(int id)
+    {
+        NavManager.NavigateTo($"/details?id={id}");
+    }
+
+
+}

@@ -1,0 +1,181 @@
+﻿@page "/search"
+
+@inject HttpClient Http
+@using Api.Models
+<h3>Job List</h3>
+
+<input @bind="SearchTerm" @oninput="SearchJobs" placeholder="Search jobs..." />
+
+<select @bind="SelectedCategory" @oninput="SearchJobsByCategory">
+    <option value="0">-- Select category --</option>
+    @foreach (var item in categories)
+    {
+        <option value="@item.CategoryId">@item.CategoryName</option>
+    }
+</select>
+
+<h4>Locations</h4>
+@foreach (var location in locations)
+{
+    @*<label>
+        <input type="checkbox" @bind="selectedLocations" value="@location.LocationId" /> @location.Name
+    </label>*@
+    <label>
+        <input  type="checkbox" checked="@selectedLocations.Contains(location.LocationId)" @onclick="() => ToggleSelection(location.LocationId)" /> @location.Name
+    </label>
+}
+<button @onclick="@(() => SearchJobsByLocation())">Search</button>
+<h1>@selectedLocations.Count()</h1>
+@foreach(var item in selectedLocations)
+{
+    <h4>@item</h4>
+}
+
+@if (Jobs != null && Jobs.Any())
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Description</th>
+                <!-- Thêm các cột khác tùy theo cấu trúc của JobList -->
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var job in Jobs)
+            {
+                <tr>
+                    <td>@job.JobTitle</td>
+                    <td>@job.JobDescription</td>
+                    <!-- Thêm các cột khác tùy theo cấu trúc của JobList -->
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No jobs found.</p>
+}
+
+@code {
+    private List<JobList> Jobs { get; set; }
+    private List<Category> categories = new List<Category>();
+    private List<Location> locations = new List<Location>();
+
+    private string SearchTerm { get; set; }
+    private int SelectedCategory { get; set; }
+    private List<int> selectedLocations = new List<int>();
+
+    private Timer debounceTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadJobs();
+        await LoadCategory();
+        locations = await Http.GetFromJsonAsync<List<Location>>("https://localhost:7280/api/Location");
+    }
+
+    private async Task LoadJobs()
+    {
+        // Lấy danh sách các job từ API
+        Jobs = await Http.GetFromJsonAsync<List<JobList>>("https://localhost:7280/api/JobList");
+    }
+    private async Task LoadCategory()
+    {
+        categories = await Http.GetFromJsonAsync<List<Category>>("https://localhost:7280/api/Category");
+    }
+
+    private async Task SearchJobs(ChangeEventArgs e)
+    {
+        // Gán giá trị tìm kiếm từ input vào SearchTerm
+        SearchTerm = e.Value.ToString();
+
+        try
+        {
+            if (string.IsNullOrEmpty(SearchTerm))
+            {
+                await LoadJobs();
+            }
+            else
+            {
+                SelectedCategory = 0;
+                // Thực hiện tìm kiếm với điều kiện phù hợp
+                Jobs = (await Http.GetFromJsonAsync<List<JobList>>($"https://localhost:7280/api/JobList/search?keyword={Uri.EscapeDataString(SearchTerm)}")) ?? new List<JobList>();
+
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.ToString());
+        }
+
+    }
+
+
+    private async Task SearchJobsByCategory(ChangeEventArgs e)
+    {
+        SelectedCategory = int.Parse(e.Value.ToString());
+
+        try
+        {
+            if (SelectedCategory == 0)
+            {
+                await LoadJobs();
+            }
+            else
+            {
+                SearchTerm = "";
+                // Thực hiện tìm kiếm với category được chọn
+                Jobs = (await Http.GetFromJsonAsync<List<JobList>>($"https://localhost:7280/api/JobList/SearchByCategory?id={SelectedCategory}")) ?? new List<JobList>();
+
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.ToString());
+        }
+    }
+
+    void ToggleSelection(int locationId)
+    {
+        if (selectedLocations.Contains(locationId))
+        {
+            selectedLocations.Remove(locationId);
+        }
+        else
+        {
+            selectedLocations.Add(locationId);
+        }
+    }
+
+    private async Task SearchJobsByLocation()
+    {
+
+        try
+        {
+            if (selectedLocations.Count() == 0)
+            {
+                await LoadJobs();
+            }
+           
+            else
+            {
+                string url = "https://localhost:7280/api/JobList/SearchByLocation?";
+                url += string.Join("&", selectedLocations.Select(id => $"ids={id}"));
+                //string idsString = string.Join(",", selectedLocations.Select(id => id.ToString()));
+                Jobs = (await Http.GetFromJsonAsync<List<JobList>>($"{url}")) ?? null;
+            }
+            
+
+            
+        }
+        catch (Exception ex)
+        {
+           // Xử lý các ngoại lệ nếu có
+            Console.WriteLine(ex.ToString());
+        }
+    }
+
+
+}
