@@ -74,6 +74,41 @@ namespace Api.Controllers
 
             return result;
         }
+
+        [HttpGet("{companyId}")]
+        public async Task<ActionResult<object>> GetApplicationStats(int companyId)
+        {
+            var company = await _context.companies.FindAsync(companyId);
+
+            if (company == null)
+            {
+                return NotFound();
+            }
+            var totalApplications = await _context.applications
+            .CountAsync(a => a.Job.CompanyId == companyId);
+
+            if (totalApplications == 0)
+            {
+                return new { ApprovedPercent = 0, RejectedPercent = 0 };
+            }
+
+
+            var approvedCount = await _context.applications
+                .CountAsync(a => a.Job.CompanyId == companyId && a.StatusId == 2);
+
+            var rejectedCount = await _context.applications
+                .CountAsync(a => a.Job.CompanyId == companyId && a.StatusId == 3);
+
+            var approvedPercent = (double)approvedCount / totalApplications * 100;
+            var rejectedPercent = (double)rejectedCount / totalApplications * 100;
+            var result = new
+            {
+                ApprovedPercent = Math.Round(approvedPercent, 1),
+                RejectedPercent = Math.Round(rejectedPercent, 1)
+            };
+
+            return result;
+        }
     }
     public class UserRegistrationStats
     {

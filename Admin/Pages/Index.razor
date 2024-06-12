@@ -69,8 +69,20 @@
     </div>
 </div>
 
-@*<div id="graphdiv"></div>*@
-<div id="staticgraphdiv"></div>
+
+<!-- Select job items start -->
+<div>
+    <select @onchange="OnCompanyChanged" class="form-control">
+        <option value="0">-- Tất cả --</option>
+        @foreach (var item in companies)
+        {
+            <option value="@item.CompanyId">@item.CompanyName</option>
+        }
+    </select>
+</div>
+<button @onclick="@(() => GenerateApplicationPieChart())">Generate</button>
+<div id="piechartdiv"></div>
+
 
 
 @code{
@@ -80,17 +92,44 @@
     string api_url = "https://localhost:7280/";
     private double percentChange;
     private string changeStatus;
+    private double percentApproved;
+    private double percentRejected;
+    private int SelectedCompId = 0;
+    private int tempId = 0;
 
+    private bool shouldRunOnAfterRenderAsync = true;
 
     private List<UserRegistrationStats> stats;
     private List<ChartData> chartData = new List<ChartData>();
     private List<Seeker> seekers = new List<Seeker>();
     private List<Company> companies = new List<Company>();
     private CompareUserResult data;
+    private ApplicationStats applicationStats;
 
+
+    private void OnCompanyChanged(ChangeEventArgs e)
+    {
+        SelectedCompId = int.Parse(e.Value.ToString());
+        shouldRunOnAfterRenderAsync = false;
+        StateHasChanged();
+        // Thực hiện các hành động cần thiết khi thay đổi giá trị
+        // Ví dụ: cập nhật dữ liệu hiển thị dựa trên tempId
+    }
     private async Task GeneratePieChart()
     {
         await JSRuntime.InvokeVoidAsync("GenerateChart", chartData);
+    }
+    private async Task GenerateApplicationPieChart()
+    {
+        if(SelectedCompId == 0)
+        {
+            applicationStats = await HttpClient.GetFromJsonAsync<ApplicationStats>($"https://localhost:7280/api/User/1");
+        }
+        else
+        {
+            applicationStats = await HttpClient.GetFromJsonAsync<ApplicationStats>($"https://localhost:7280/api/User/{SelectedCompId}");
+            await JSRuntime.InvokeVoidAsync("GeneratePieChart", applicationStats);
+        }   
     }
     private async Task GenerateGraph()
     {
@@ -99,14 +138,17 @@
     }
     private async Task GenerateStaticGraph()
     {
-
         await JSRuntime.InvokeVoidAsync("GenerateStaticUserHistogram", data);
     }
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await GeneratePieChart();
-        await GenerateGraph();
-        await GenerateStaticGraph();
+        if (shouldRunOnAfterRenderAsync)
+        {
+            await GeneratePieChart();
+            await GenerateGraph();
+            await GenerateStaticGraph();
+            shouldRunOnAfterRenderAsync = false;    
+        }
     }
     protected override async Task OnInitializedAsync()
     {
@@ -123,6 +165,7 @@
         sum = seeker_num + comp_num;
         chartData.Add(new ChartData { Name = "Người tìm việc", Percent = (seeker_num * 100.0) / sum });
         chartData.Add(new ChartData { Name = "Công ty", Percent = (comp_num * 100.0) / sum });
+
         data = await HttpClient.GetFromJsonAsync<CompareUserResult>("https://localhost:7280/api/User/compare");
         if (data != null)
         {
@@ -141,6 +184,11 @@
         public int LastMonth { get; set; }
         public double PercentChange { get; set; } 
         public string ChangeStatus { get; set; } 
+    }
+    public class ApplicationStats
+    {
+        public double ApprovedPercent { get; set; }
+        public double RejectedPercent { get; set; }
     }
 }
 
