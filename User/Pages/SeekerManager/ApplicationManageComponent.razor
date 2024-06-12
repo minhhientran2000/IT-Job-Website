@@ -130,16 +130,17 @@ else
                                             <div class="job-items">                                            
                                                 <div class="job-tittle job-tittle2">
                                                     <a href="#">
-                                                        <h4>@item.Job.JobTitle</h4>
+                                                            <h4 style="width: 250px; white-space: nowrap;overflow: hidden; text-overflow: ellipsis;">@item.Job.JobTitle</h4>
                                                     </a>
                                                     <ul>
                                                         <li>Ngày hết hạn:  @item.Job.ExpiredDate.ToShortDateString()</li>
-                                                        <li>$ @item.Job.SalaryRange</li>
+                                                        <li>Mức lương: @item.Job.SalaryRange</li>
                                                     </ul>
                                                 </div>
                                             </div>
                                     
                                             <div class="items-link items-link2 f-right">
+                                                <span>Ngày ứng tuyển: <b>@item.CreateDate.ToShortDateString()</b></span>
                                                 <br />
                                                 <span>Trạng thái: <b>@item.Status.StatusName</b></span>
                                                 <br/>

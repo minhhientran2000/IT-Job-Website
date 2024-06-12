@@ -209,7 +209,7 @@ else
                     <span>Mô tả công ty</span>
                         @if(job.Company != null)
                         {
-                        <p>@job.Company.CompanyDescription</p>
+                        <p style="height: 205px; overflow: hidden;">@job.Company.CompanyDescription</p>
                         <ul>
                             <li>Tên công ty: <span>@job.Company.CompanyName </span></li>
                             <li>Web : <span>@job.Company.CompanyWebsiteUrl</span></li>
@@ -229,7 +229,7 @@ else
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLabel">Edit Seeker Information</h5>
+                <h5 class="modal-title" id="exampleModalLabel">Hồ sơ ứng tuyển</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -238,12 +238,12 @@ else
                 <EditForm Model="@comp" OnValidSubmit="Confirm">
                     <DataAnnotationsValidator />
                     <div class="form-group">
-                        <label>Name :</label>
+                        <label>Tên :</label>
                         <input disabled type="text" @bind-value="comp.Name" class="form-control">
                         <ValidationMessage For="@(() => comp.Name)" />
                     </div>
                     <div class="form-group">
-                        <label>Phone Number :</label>
+                        <label>Số điện thoại :</label>
                         <input disabled type="text" @bind-value="comp.PhoneNumber" class="form-control">
                         <ValidationMessage For="@(() => comp.PhoneNumber)" />
                     </div>
@@ -253,18 +253,18 @@ else
                         <ValidationMessage For="@(() => comp.GPA)" />
                     </div>
                     <div class="form-group">
-                        <label>Major :</label>
+                        <label>Chuyên ngành :</label>
                         <input disabled type="text" @bind-value="comp.Major" class="form-control">
                         <ValidationMessage For="@(() => comp.Major)" />
                     </div>
                         <div class="form-group">
-                            <label>Address :</label>
+                            <label>Địa chỉ :</label>
                             <input disabled type="text" @bind-value="comp.SeekerAddress" class="form-control">
                             <ValidationMessage For="@(() => comp.SeekerAddress)" />
                         </div>
                     <div class="form-group">
-                        <label>Introducing Letter :</label>
-                        <input required type="text" @bind-value="newApplication.IntroducingLetter" class="form-control">
+                        <label>Thư giới thiệu :</label>
+                        <input style="height: 100px;" required type="text" @bind-value="newApplication.IntroducingLetter" class="form-control">
                         <ValidationMessage For="@(() => newApplication.IntroducingLetter)" />
                     </div>
 
@@ -365,13 +365,40 @@ else
 
     }
 
+    //IEnumerable<string> GetSentences(string text)
+    //{
+    //    // Tách đoạn văn thành các câu dựa trên dấu chấm, dấu chấm hỏi, dấu chấm than, hoặc dấu chấm phẩy
+    //    string[] sentences = text.Split(new[] { '.', '?', '!' }, StringSplitOptions.RemoveEmptyEntries);
+
+    //    // Trả về danh sách các câu
+    //    return sentences;
+    //}
     IEnumerable<string> GetSentences(string text)
     {
-        // Tách đoạn văn thành các câu dựa trên dấu chấm, dấu chấm hỏi, dấu chấm than, hoặc dấu chấm phẩy
-        string[] sentences = text.Split(new[] { '.', '?', '!' }, StringSplitOptions.RemoveEmptyEntries);
+        List<string> result = new List<string>();
+        System.Text.StringBuilder sentence = new System.Text.StringBuilder();
 
-        // Trả về danh sách các câu
-        return sentences;
+        for (int i = 0; i < text.Length; i++)
+        {
+            char currentChar = text[i];
+            sentence.Append(currentChar);
+
+            if (currentChar == '.' || currentChar == '?' || currentChar == '!')
+            {
+                if (i + 1 < text.Length && char.IsWhiteSpace(text[i + 1]) && (i + 2 < text.Length && char.IsUpper(text[i + 2])))
+                {
+                    result.Add(sentence.ToString().Trim());
+                    sentence.Clear();
+                }
+            }
+        }
+
+        if (sentence.Length > 0)
+        {
+            result.Add(sentence.ToString().Trim());
+        }
+
+        return result;
     }
     async Task Confirm()
     {

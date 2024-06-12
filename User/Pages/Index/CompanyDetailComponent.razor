@@ -6,6 +6,7 @@
 @using CurrieTechnologies.Razor.SweetAlert2
 @inject SweetAlertService Swal
 @inject IJSRuntime JSRuntime
+@using System.Net;
 
 @using Api.Models
 
@@ -62,7 +63,7 @@
                                 </div>
                                 <div class="job-tittle job-tittle2">
                                     <a href="#" @onclick="@(() => NavigateToDetails(item.JobId))">
-                                        <h4 style="width: 600px; white-space: nowrap;overflow: hidden; text-overflow: ellipsis;">
+                                        <h4 style="width: 400px; white-space: nowrap;overflow: hidden; text-overflow: ellipsis;">
                                             @item.JobTitle
                                         </h4>
                                     </a>
@@ -133,7 +134,7 @@
     private string id;
     private Company comp = new Company();
     private List<Company> list_comp = new List<Company>(); 
-     private List<JobList> jobs = new List<JobList>();
+    private List<JobList> jobs = new List<JobList>();
 
 
     protected override void OnInitialized()
@@ -146,16 +147,40 @@
 
     protected override async Task OnInitializedAsync()
     {
+
         //compId = await sessionStorage.GetItemAsync<int>("comId");
         comp = await http.GetFromJsonAsync<Company>($"https://localhost:7280/api/Company/{id}");
         list_comp = await http.GetFromJsonAsync<List<Company>>("https://localhost:7280/api/Company");
         list_comp = list_comp.Where(c => c.CompanyId != Convert.ToInt32(id)).Take(4).ToList();
-        jobs = await http.GetFromJsonAsync<List<JobList>>($"https://localhost:7280/api/JobList/GetJobByCompanyId/{id}");              
-        
+        try
+        {
+            jobs = await http.GetFromJsonAsync<List<JobList>>($"https://localhost:7280/api/JobList/GetJobByCompanyId/{id}");
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            jobs = null;
+        }
+        catch (Exception ex)
+        {
+            jobs = null;   
+        }        
     }
-    private async Task NavigateToCompany(int id)
+    private async Task NavigateToCompany(int idcomp)
     {
-        comp = await http.GetFromJsonAsync<Company>($"https://localhost:7280/api/Company/{id}");
+        comp = await http.GetFromJsonAsync<Company>($"https://localhost:7280/api/Company/{idcomp}");
+        NavManager.NavigateTo($"/companydetail?id={idcomp}");
+        try
+        {
+            jobs = await http.GetFromJsonAsync<List<JobList>>($"https://localhost:7280/api/JobList/GetJobByCompanyId/{idcomp}");
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            jobs = null;
+        }
+        catch (Exception ex)
+        {
+            jobs = null;
+        }
     }
     private void NavigateToDetails(int id)
     {

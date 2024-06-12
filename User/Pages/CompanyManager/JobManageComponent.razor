@@ -180,13 +180,13 @@
                         <div class="form-group">
                             <label>Mô tả công việc :</label>
                             @*<input type="text" @bind-value="editJob.JobDescription" class="form-control">*@
-                            <textarea @bind="editJob.JobDescription" class="form-control"></textarea>
+                            <textarea style="height: 300px;" @bind="editJob.JobDescription" class="form-control"></textarea>
                             <ValidationMessage For="@(() => editJob.JobDescription)" />
                         </div>
                         <div class="form-group">
                             <label>Yêu cầu công việc :</label>
                             @*<input type="text" @bind-value="editJob.JobDescription" class="form-control">*@
-                            <textarea @bind="editJob.JobRequirement" class="form-control"></textarea>
+                            <textarea style="height: 300px;" @bind="editJob.JobRequirement" class="form-control"></textarea>
                             <ValidationMessage For="@(() => editJob.JobRequirement)" />
                         </div>
                         <div class="form-group">
@@ -314,13 +314,13 @@
                         </div>
                         <div class="form-group">
                             <label>Mô tả công việc : </label>
-                            <textarea type="text" required @bind="newJob.JobDescription" class="form-control">
+                            <textarea style="height: 300px;" type="text" required @bind="newJob.JobDescription" class="form-control">
                             </textarea>
                             <ValidationMessage For="@(() => newJob.JobDescription)" />
                         </div>
                         <div class="form-group">
                             <label>Yêu cầu công việc : </label>
-                            <textarea type="text" required @bind="newJob.JobRequirement" class="form-control">
+                            <textarea style="height: 300px;" type="text" required @bind="newJob.JobRequirement" class="form-control">
                             </textarea>
                             <ValidationMessage For="@(() => newJob.JobRequirement)" />
                         </div>
@@ -455,7 +455,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await Task.Delay(50);
+        await Task.Delay(100);
         //compId = await sessionStorage.GetItemAsync<int>("comId");
         if (compId != 0)
         {
@@ -555,9 +555,10 @@
         if (response.IsSuccessStatusCode)
         {
             // Cập nhật danh sách công việc sau khi xóa thành công
-            jobs = await http.GetFromJsonAsync<List<JobList>>($"https://localhost:7280/api/JobList/GetJobByCompanyId/{compId}");
+
             //await OnInitializedAsync();
             await Swal.FireAsync("Thành công!", "Xóa công việc thành công!", SweetAlertIcon.Success);
+            await OnInitializedAsync();
         }
         else
         {
